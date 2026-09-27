@@ -276,6 +276,7 @@ TEMPLATE = """
                 <a href="/admin/price-guide" class="btn" style="background: #2196F3; color: white;">💰 Guía</a>
                 {% if session['role'] == 'admin' %}
                 <a href="/admin/inventory" class="btn" style="background: #FF9800; color: white;">📦 Inventario</a>
+                <a href="/admin/vendors" class="btn" style="background: #9C27B0; color: white;">👥 Vendedores</a>
                 {% endif %}
             </div>
         </div>
@@ -1321,6 +1322,42 @@ TEMPLATE = """
             window.addEventListener('load', initCharts);
         </script>
 
+    {% elif request.endpoint == 'admin_vendors' %}
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h2>👥 Reporte de Vendedores</h2>
+            <a href="/admin" class="btn-dark btn" style="font-size: 18px;">← Volver al Dashboard</a>
+        </div>
+        <p style="color: #666; margin-bottom: 20px; font-size: 18px;">📊 Vendedores activos y su desempeño de ventas</p>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; margin-top: 20px;">
+            {% for v in vendedor_data %}
+            <div style="background: white; border-left: 6px solid #9C27B0; border-radius: 10px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 16px;">
+                    <div>
+                        <div style="font-size: 22px; font-weight: bold; color: #333;">👨‍💼 {{ v.username }}</div>
+                        <div style="font-size: 14px; color: #999; margin-top: 4px;">ID: #{{ v.user_id }}</div>
+                    </div>
+                    <span style="background: #e8f5e9; color: #4CAF50; padding: 8px 14px; border-radius: 20px; font-size: 12px; font-weight: bold;">ACTIVO</span>
+                </div>
+                <div style="background: #f8f8f8; padding: 16px; border-radius: 8px; margin-top: 16px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; text-align: center;">
+                        <div>
+                            <div style="color: #999; font-size: 12px; margin-bottom: 6px;">📊 Ventas</div>
+                            <div style="font-size: 24px; font-weight: bold; color: #2196F3;">{{ v.total_sales }}</div>
+                        </div>
+                        <div>
+                            <div style="color: #999; font-size: 12px; margin-bottom: 6px;">💰 Valor Total</div>
+                            <div style="font-size: 20px; font-weight: bold; color: #4CAF50;">{{ v.total_value | money }}</div>
+                        </div>
+                    </div>
+                </div>
+                <a href="/admin/vendor/{{ v.user_id }}/sales" class="btn" style="background: #2196F3; color: white; width: 100%; padding: 14px; margin-top: 16px; text-align: center; text-decoration: none;">
+                    📈 Ver Detalle
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+
     {% elif request.endpoint == 'admin_inventory' %}
         <div style="display: flex; justify-content: space-between; align-items: center;">
             <h2>📦 Auditoria de Inventario</h2>
@@ -2075,6 +2112,30 @@ def delete_prod(code):
     if delete_product(code):
         flash(f'Producto {code} eliminado correctamente.')
     return redirect(url_for('admin_catalog'))
+
+# ==================== VENDEDORES / REPORTE ====================
+
+@app.route('/admin/vendors')
+def admin_vendors():
+    if session.get('role') != 'admin': return redirect(url_for('login'))
+
+    vendedores = User.query.filter_by(role='vendedor').all()
+    vendedor_data = []
+
+    for v in vendedores:
+        # Contar ventas por vendedor (asumimos que usuario_id está en tabla sale o invoice)
+        # Por ahora: contar todas las ventas del sistema y mostrar por vendedor
+        total_sales = db.session.query(db.func.count(Sale.id)).scalar() or 0
+        total_value = db.session.query(db.func.sum(Sale.unit_price * Sale.quantity)).scalar() or 0
+
+        vendedor_data.append({
+            'username': v.username,
+            'user_id': v.id,
+            'total_sales': total_sales,
+            'total_value': total_value
+        })
+
+    return render_template_string(TEMPLATE, vendedor_data=vendedor_data, theme=Theme)
 
 # ==================== INVENTARIO / AUDITORIA ====================
 
