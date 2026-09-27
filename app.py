@@ -5,6 +5,8 @@ MÓDULO: app.py
 =============================================================================
 """
 import os
+import json
+from datetime import date
 from flask import Flask, render_template_string, request, redirect, url_for, session, flash
 from werkzeug.security import generate_password_hash, check_password_hash
 from dotenv import load_dotenv
@@ -12,6 +14,12 @@ from database import db
 from models import User, Product, Purchase, Sale, Invoice, InvoiceItem
 from config.icons_colors import Theme
 from utils import generate_sku, toggle_product_status, delete_product, generate_invoice_number
+
+class DateEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, date):
+            return str(obj)
+        return super().default(obj)
 
 load_dotenv()
 
@@ -1564,8 +1572,7 @@ def admin_purchase():
         db.session.commit()
         flash('¡Entrada de stock registrada correctamente!')
         return redirect(url_for('admin_dashboard'))
-    import json
-    return render_template_string(TEMPLATE, products=products, products_json=json.dumps(products_data), theme=Theme)
+    return render_template_string(TEMPLATE, products=products, products_json=json.dumps(products_data, cls=DateEncoder), theme=Theme)
 
 @app.route('/admin/sale', methods=['GET', 'POST'])
 def admin_sale():
@@ -1574,7 +1581,8 @@ def admin_sale():
     if request.method == 'POST':
         from datetime import datetime
         invoice_number = generate_invoice_number()
-        date = request.form.get('date', datetime.now().strftime('%d/%m/%Y'))
+        date_str = request.form.get('date', datetime.now().strftime('%d/%m/%Y'))
+        date_obj = datetime.strptime(date_str, '%d/%m/%Y').date()
 
         items = []
         total_amount = 0
@@ -1609,7 +1617,7 @@ def admin_sale():
             return redirect(url_for('admin_sale'))
 
         # Crear invoice
-        invoice = Invoice(invoice_number=invoice_number, date=date, total_amount=total_amount)
+        invoice = Invoice(invoice_number=invoice_number, date=date_obj, total_amount=total_amount)
         db.session.add(invoice)
         db.session.flush()
 
@@ -1658,7 +1666,7 @@ def admin_sale():
     today = datetime.now().strftime('%d/%m/%Y')
 
     return render_template_string(TEMPLATE,
-                                 products_data=json.dumps(products_data),
+                                 products_data=json.dumps(products_data, cls=DateEncoder),
                                  today=today,
                                  theme=Theme)
 
