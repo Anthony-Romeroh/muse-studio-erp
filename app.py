@@ -167,25 +167,74 @@ TEMPLATE = """
             <button type="submit" class="btn">Entrar</button>
         </form>
 
-    {% elif session.get('role') == 'dev' %}
+    {% elif session.get('role') in ['dev', 'admin'] %}
+        {% if session.get('role') == 'dev' %}
         <h2>Panel de Desarrollador - Gestión de Usuarios</h2>
+        {% else %}
+        <h2>👥 Gestión de Usuarios - Vendedores</h2>
+        {% endif %}
         <form method="POST" action="/dev/create_user" style="background: #fafafa; padding: 20px; border-radius: 8px; border: 1px solid #eee;">
+            {% if session.get('role') == 'dev' %}
             <h3>Registrar Nuevo Usuario</h3>
+            {% else %}
+            <h3>👨‍💼 Crear Nuevo Vendedor</h3>
+            {% endif %}
             <label>Nombre de Usuario:</label>
-            <input type="text" name="new_user" required>
+            <input type="text" name="new_user" required style="padding: 16px; font-size: 18px;">
             <label>Contraseña:</label>
-            <input type="password" name="new_password" required>
+            <input type="password" name="new_password" required style="padding: 16px; font-size: 18px;">
+            {% if session.get('role') == 'dev' %}
             <label>Rol:</label>
-            <select name="role">
+            <select name="role" style="padding: 16px; font-size: 18px;">
+                <option value="vendedor">Vendedor (POS)</option>
                 <option value="admin">Admin (ERP)</option>
                 <option value="dev">Dev</option>
             </select>
-            <button type="submit" class="btn btn-pink">Crear Usuario</button>
+            {% else %}
+            <input type="hidden" name="role" value="vendedor">
+            <div style="background: #e8f5e9; padding: 14px; border-radius: 8px; margin-bottom: 18px; border-left: 4px solid #4CAF50;">
+                <strong style="color: #4CAF50; font-size: 16px;">✅ Rol: VENDEDOR (Automático)</strong>
+            </div>
+            {% endif %}
+            <button type="submit" class="btn btn-pink" style="width: 100%; padding: 16px; font-size: 18px;">
+                {% if session.get('role') == 'dev' %}
+                ✅ Crear Usuario
+                {% else %}
+                👨‍💼 Crear Vendedor
+                {% endif %}
+            </button>
         </form>
-        <table>
-            <tr><th>ID</th><th>Usuario</th><th>Rol</th><th>Acción</th></tr>
+
+        <div style="margin-top: 30px;">
+            {% if session.get('role') == 'dev' %}
+            <h3>📋 Todos los Usuarios</h3>
+            {% else %}
+            <h3>👥 Vendedores Creados</h3>
+            {% endif %}
+        </div>
+        <table style="margin-top: 15px;">
+            <tr>
+                <th style="font-size: 18px;">ID</th>
+                <th style="font-size: 18px;">👤 Usuario</th>
+                <th style="font-size: 18px;">🏷️ Rol</th>
+                <th style="font-size: 18px;">⚙️ Acciones</th>
+            </tr>
             {% for u in users %}
-            <tr><td>{{ u.id }}</td><td><b>{{ u.username }}</b></td><td>{{ u.role | upper }}</td><td><a href="/dev/reset_password/{{ u.id }}" class="btn btn-dark" style="padding: 6px 12px; font-size: 16px; text-decoration: none;">🔑 Reset</a></td></tr>
+                {% if session.get('role') == 'dev' or u.role == 'vendedor' %}
+                <tr>
+                    <td style="font-size: 18px;">{{ u.id }}</td>
+                    <td style="font-size: 18px;"><b>{{ u.username }}</b></td>
+                    <td style="font-size: 18px; color: {% if u.role == 'vendedor' %}#4CAF50{% elif u.role == 'admin' %}#FF6B9D{% else %}#2196F3{% endif %}; font-weight: bold;">
+                        {% if u.role == 'vendedor' %}👨‍💼 VENDEDOR{% elif u.role == 'admin' %}🔐 ADMIN{% else %}🔧 DEV{% endif %}
+                    </td>
+                    <td>
+                        <a href="/dev/reset_password/{{ u.id }}" class="btn btn-dark" style="padding: 12px 18px; font-size: 16px; text-decoration: none; margin: 4px;">🔑 Reset Pass</a>
+                        {% if session.get('role') == 'dev' and u.role != 'dev' %}
+                        <a href="/dev/delete_user/{{ u.id }}" class="btn" style="background: #f44336; color: white; padding: 12px 18px; font-size: 16px; text-decoration: none; margin: 4px;" onclick="return confirm('¿Eliminar usuario?');">🗑️ Eliminar</a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endif %}
             {% endfor %}
         </table>
 
@@ -1496,33 +1545,44 @@ def dev_panel():
 
 @app.route('/dev/create_user', methods=['POST'])
 def create_user():
-    if session.get('role') != 'dev': return redirect(url_for('login'))
+    if session.get('role') not in ['dev', 'admin']: return redirect(url_for('login'))
     new_username = request.form['new_user']
     new_password = request.form['new_password']
     role = request.form['role']
-    
+
+    # Admin solo puede crear vendedores
+    if session.get('role') == 'admin' and role != 'vendedor':
+        flash('❌ Admin solo puede crear Vendedores!')
+        return redirect(url_for('admin_dashboard'))
+
     if User.query.filter_by(username=new_username).first():
-        flash('El nombre de usuario ya existe.')
-        return redirect(url_for('dev_panel'))
+        flash('❌ El nombre de usuario ya existe.')
+        return redirect(url_for('dev_panel' if session.get('role') == 'dev' else 'admin_dashboard'))
     
     hashed_pw = generate_password_hash(new_password, method='pbkdf2:sha256')
     db.session.add(User(username=new_username, password=hashed_pw, role=role))
     db.session.commit()
-    flash(f'Usuario "{new_username}" creado con éxito.')
-    return redirect(url_for('dev_panel'))
+
+    if role == 'vendedor':
+        flash(f'✅ Vendedor "{new_username}" creado con éxito! (Contraseña: {new_password})')
+    else:
+        flash(f'✅ Usuario "{new_username}" creado con éxito.')
+
+    return redirect(url_for('dev_panel' if session.get('role') == 'dev' else 'admin_dashboard'))
 
 @app.route('/dev/reset_password/<int:user_id>')
 def reset_password(user_id):
-    if session.get('role') != 'dev': return redirect(url_for('login'))
+    if session.get('role') not in ['dev', 'admin']: return redirect(url_for('login'))
     user = User.query.get(user_id)
-    if not user: return redirect(url_for('dev_panel'))
+    redirect_url = 'dev_panel' if session.get('role') == 'dev' else 'admin_dashboard'
+    if not user: return redirect(url_for(redirect_url))
 
     new_password = f"{user.username}123"
     hashed_pw = generate_password_hash(new_password, method='pbkdf2:sha256')
     user.password = hashed_pw
     db.session.commit()
-    flash(f'Contraseña de "{user.username}" reseteada a: <b>{new_password}</b>')
-    return redirect(url_for('dev_panel'))
+    flash(f'🔑 Contraseña de "{user.username}" reseteada a: <b>{new_password}</b>')
+    return redirect(url_for(redirect_url))
 
 @app.route('/admin')
 def admin_dashboard():
