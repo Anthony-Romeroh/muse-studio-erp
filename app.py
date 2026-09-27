@@ -167,7 +167,7 @@ TEMPLATE = """
             <button type="submit" class="btn">Entrar</button>
         </form>
 
-    {% elif session.get('role') in ['dev', 'admin'] %}
+    {% elif session.get('role') == 'dev' %}
         {% if session.get('role') == 'dev' %}
         <h2>Panel de Desarrollador - Gestión de Usuarios</h2>
         {% else %}
