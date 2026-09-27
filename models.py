@@ -1,4 +1,5 @@
 from database import db
+from datetime import date
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -18,7 +19,7 @@ class Product(db.Model):
 
 class Purchase(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    date = db.Column(db.String(20), nullable=False)
+    date = db.Column(db.Date, nullable=False)
     product_code = db.Column(db.String(50), nullable=False)
     quantity = db.Column(db.Integer, nullable=False)
     unit_cost = db.Column(db.Float, nullable=False)
@@ -26,7 +27,7 @@ class Purchase(db.Model):
 class Invoice(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     invoice_number = db.Column(db.String(50), unique=True, nullable=False)
-    date = db.Column(db.String(20), nullable=False)
+    date = db.Column(db.Date, nullable=False)
     total_amount = db.Column(db.Float, default=0, nullable=False)
     items = db.relationship('InvoiceItem', cascade='all, delete-orphan')
 
@@ -36,11 +37,34 @@ class InvoiceItem(db.Model):
     product_code = db.Column(db.String(50), nullable=False)
     quantity = db.Column(db.Integer, nullable=False)
     unit_price = db.Column(db.Float, nullable=False)
+    discount = db.Column(db.Float, default=0, nullable=False)
     subtotal = db.Column(db.Float, nullable=False)
 
 class Sale(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    date = db.Column(db.String(20), nullable=False)
+    date = db.Column(db.Date, nullable=False)
     product_code = db.Column(db.String(50), nullable=False)
     quantity = db.Column(db.Integer, nullable=False)
     unit_price = db.Column(db.Float, nullable=False)
+
+class InventoryCount(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    count_date = db.Column(db.Date, nullable=False)
+    status = db.Column(db.String(20), default='em_progreso', nullable=False)  # em_progreso / finalizado / ajustado
+    total_loss = db.Column(db.Integer, default=0, nullable=False)
+    total_variance = db.Column(db.Integer, default=0, nullable=False)
+    notes = db.Column(db.String(500), default='')
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    items = db.relationship('InventoryCountItem', cascade='all, delete-orphan')
+
+class InventoryCountItem(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    inventory_count_id = db.Column(db.Integer, db.ForeignKey('inventory_count.id'), nullable=False)
+    product_code = db.Column(db.String(50), nullable=False)
+    system_quantity = db.Column(db.Integer, nullable=False)
+    physical_count = db.Column(db.Integer, nullable=False)
+    variance = db.Column(db.Integer, nullable=False)  # physical - system
+    variance_type = db.Column(db.String(20), nullable=False)  # FALTA / EXCESSO / OK
+    loss_reason = db.Column(db.String(50), default='')  # QUEBRA_DANO / ROUBO_FURTO / VENCIMIENTO / etc
+    notes = db.Column(db.String(500), default='')
+    status = db.Column(db.String(20), default='pendiente', nullable=False)  # pendiente / ajustado

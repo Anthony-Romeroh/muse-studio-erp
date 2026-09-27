@@ -6,12 +6,13 @@ MÓDULO: app.py
 """
 import os
 import json
-from datetime import date
+from datetime import date, datetime, time
 from flask import Flask, render_template_string, request, redirect, url_for, session, flash
 from werkzeug.security import generate_password_hash, check_password_hash
 from dotenv import load_dotenv
 from database import db
-from models import User, Product, Purchase, Sale, Invoice, InvoiceItem
+from sqlalchemy import func
+from models import User, Product, Purchase, Sale, Invoice, InvoiceItem, InventoryCount, InventoryCountItem
 from config.icons_colors import Theme
 from utils import generate_sku, toggle_product_status, delete_product, generate_invoice_number
 
@@ -21,7 +22,7 @@ class DateEncoder(json.JSONEncoder):
             return str(obj)
         return super().default(obj)
 
-load_dotenv()
+load_dotenv(override=True)
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'muse_studio_secreta_2026')
@@ -47,6 +48,8 @@ with app.app_context():
         db.session.add(User(username='dev', password=generate_password_hash('dev123'), role='dev'))
     if not User.query.filter_by(username='admin').first():
         db.session.add(User(username='admin', password=generate_password_hash('admin123'), role='admin'))
+    if not User.query.filter_by(username='vendedor').first():
+        db.session.add(User(username='vendedor', password=generate_password_hash('vendedor123'), role='vendedor'))
     db.session.commit()
 
 TEMPLATE = """
@@ -57,31 +60,58 @@ TEMPLATE = """
     <title>Muse Studio - Mini ERP</title>
     <style>
         :root { --bg-dark: #121212; --gold: #D4AF37; --pink: #FF69B4; --light-pink: #FFF0F5; --danger: #ff6b6b; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f9f9f9; margin: 0; padding: 0; color: #333; }
-        .header { background: var(--bg-dark); color: var(--gold); padding: 20px; text-align: center; border-bottom: 3px solid var(--pink); }
-        .header h1 { margin: 0; font-size: 24px; }
-        .header p { margin: 5px 0 0 0; color: var(--pink); font-size: 14px; }
-        .container { max-width: 1000px; margin: 30px auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
-        .btn { background: var(--gold); color: #000; padding: 10px 18px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; text-decoration: none; display: inline-block; }
+        * { -webkit-text-size-adjust: 100%; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f9f9f9; margin: 0; padding: 0; color: #333; font-size: 18px; }
+        h1, h2, h3 { font-size: 1.5em; }
+        h2 { font-size: 28px; }
+        h3 { font-size: 24px; }
+        label { font-size: 18px; font-weight: 600; }
+        .header { background: var(--bg-dark); color: var(--gold); padding: 25px 15px; text-align: center; border-bottom: 3px solid var(--pink); }
+        .header h1 { margin: 0; font-size: 28px; }
+        .header p { margin: 8px 0 0 0; color: var(--pink); font-size: 20px; }
+        .container { max-width: 1000px; margin: 20px auto; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
+        .btn { background: var(--gold); color: #000; padding: 18px 24px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; text-decoration: none; display: inline-block; font-size: 20px; min-height: 55px; display: flex; align-items: center; }
         .btn-pink { background: var(--pink); color: white; }
         .btn-dark { background: var(--bg-dark); color: var(--gold); }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #e0e0e0; padding: 12px; text-align: left; }
-        th { background-color: var(--light-pink); }
-        .alert { padding: 12px; background: #d4edda; color: #155724; margin-bottom: 20px; border-radius: 5px; }
-        form input, form select { padding: 10px; margin: 8px 0 15px 0; width: 100%; box-sizing: border-box; border: 1px solid #ccc; border-radius: 5px; }
-        .nav-bar { background: #222; color: white; border-bottom: 2px solid var(--pink); }
-        .nav-bar a { color: var(--gold); text-decoration: none; transition: all 0.3s ease; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 20px; }
+        th, td { border: 1px solid #e0e0e0; padding: 20px; text-align: left; }
+        th { background-color: var(--light-pink); font-weight: bold; font-size: 20px; }
+        .alert { padding: 16px; background: #d4edda; color: #155724; margin-bottom: 20px; border-radius: 8px; font-size: 20px; }
+        form input, form select, textarea { padding: 18px; margin: 14px 0 20px 0; width: 100%; box-sizing: border-box; border: 2px solid #ddd; border-radius: 8px; font-size: 20px; }
+        td .btn { font-size: 18px; padding: 14px 18px; min-height: 48px; margin: 6px; }
+        form input:focus, form select:focus, textarea:focus { border-color: var(--pink); outline: none; }
+        .nav-bar { background: #222; color: white; border-bottom: 2px solid var(--pink); padding: 15px; }
+        .nav-bar a { color: var(--gold); text-decoration: none; transition: all 0.3s ease; font-size: 18px; }
         .nav-bar a:hover { background: rgba(212, 175, 55, 0.2) !important; transform: translateY(-2px); }
-        .kpi-container { display: flex; gap: 20px; margin-bottom: 25px; }
-        .kpi-card { flex: 1; background: #fff5f8; border: 1px solid #ffccd5; padding: 20px; border-radius: 8px; text-align: center; }
-        .kpi-card h3 { margin: 0; color: #666; font-size: 14px; }
-        .kpi-card p { margin: 10px 0 0 0; font-size: 22px; font-weight: bold; color: var(--pink); }
-        .quick-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 25px; }
+        .kpi-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 30px; }
+        .kpi-card { background: #fff5f8; border: 2px solid #ffccd5; padding: 20px; border-radius: 12px; text-align: center; }
+        .kpi-card h3 { margin: 0; color: #666; font-size: 16px; }
+        .kpi-card p { margin: 12px 0 0 0; font-size: 32px; font-weight: bold; color: var(--pink); }
+        .quick-actions { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; margin-bottom: 25px; }
+        .quick-actions .btn { padding: 30px 15px; font-size: 24px; min-height: 120px; flex-direction: column; text-align: center; gap: 12px; line-height: 1.3; font-weight: bold; }
         .kpi-value { transition: filter 0.3s ease; }
         .kpi-value.hidden { filter: blur(8px); }
         .kpi-value.hidden::after { content: '••••'; position: absolute; left: 50%; transform: translateX(-50%); }
         button[onclick*="toggleValues"] { transition: all 0.3s ease; }
+
+        @media (max-width: 768px) {
+            .container { padding: 16px; margin: 10px auto; }
+            table { font-size: 14px; display: block; overflow-x: auto; }
+            th, td { padding: 10px 8px; font-size: 13px; }
+            th { font-size: 12px; }
+            .kpi-container { grid-template-columns: 1fr; }
+            .quick-actions { grid-template-columns: 1fr; }
+            .quick-actions .btn { min-height: 70px; font-size: 16px; padding: 16px 12px; }
+            h2 { font-size: 20px; }
+            h3 { font-size: 16px; }
+            .btn { font-size: 14px; padding: 10px 14px; min-height: 40px; }
+            td .btn { font-size: 12px; padding: 6px 10px; min-height: 32px; margin: 2px 0; display: block; width: 100%; margin-bottom: 4px; }
+            form input, form select, textarea { font-size: 14px; padding: 12px; }
+            label { font-size: 14px; }
+            .nav-bar a { font-size: 12px; padding: 6px 8px; }
+            body { font-size: 14px; }
+            .nav-bar { padding: 8px 12px; }
+        }
     </style>
 </head>
 <body>
@@ -94,26 +124,26 @@ TEMPLATE = """
 
 {% if session.get('user') %}
 <div class="nav-bar" style="display: flex; justify-content: space-between; align-items: center; padding: 15px 30px;">
-    <div style="display: flex; align-items: center; gap: 10px;">
-        <span style="font-size: 14px; color: #999;">Sesión activa:</span>
+    <div style="display: flex; align-items: center; gap: 16px;">
+        <span style="font-size: 18px; color: #999;">Sesión activa:</span>
         <b style="color: var(--gold); font-size: 16px;">{{ session['user'] | upper }}</b>
-        <span style="background: var(--pink); color: white; padding: 3px 8px; border-radius: 3px; font-size: 12px; font-weight: bold;">{{ session['role'] | upper }}</span>
+        <span style="background: var(--pink); color: white; padding: 3px 8px; border-radius: 3px; font-size: 16px; font-weight: bold;">{{ session['role'] | upper }}</span>
     </div>
 
     <div style="display: flex; gap: 20px; align-items: center;">
         {% if session['role'] == 'dev' %}
-            <a href="/dev" style="display: flex; align-items: center; gap: 8px; color: var(--gold); text-decoration: none; font-weight: bold; padding: 8px 15px; background: rgba(255,255,255,0.1); border-radius: 5px; transition: all 0.3s;">
+            <a href="/dev" style="display: flex; align-items: center; gap: 8px; color: var(--gold); text-decoration: none; font-weight: bold; padding: 12px 15px; background: rgba(255,255,255,0.1); border-radius: 5px; transition: all 0.3s;">
                 🏠 Inicio
             </a>
         {% elif session['role'] == 'admin' %}
-            <a href="/admin" style="display: flex; align-items: center; gap: 8px; color: var(--gold); text-decoration: none; font-weight: bold; padding: 8px 15px; background: rgba(255,255,255,0.1); border-radius: 5px; transition: all 0.3s;">
+            <a href="/admin" style="display: flex; align-items: center; gap: 8px; color: var(--gold); text-decoration: none; font-weight: bold; padding: 12px 15px; background: rgba(255,255,255,0.1); border-radius: 5px; transition: all 0.3s;">
                 🏠 Inicio
             </a>
         {% endif %}
 
         <div style="height: 25px; width: 1px; background: rgba(255,255,255,0.2);"></div>
 
-        <a href="/logout" style="display: flex; align-items: center; gap: 8px; color: #ff6b6b; text-decoration: none; font-weight: bold; padding: 8px 15px; background: rgba(255,107,107,0.1); border-radius: 5px; transition: all 0.3s; border: 1px solid rgba(255,107,107,0.3);">
+        <a href="/logout" style="display: flex; align-items: center; gap: 8px; color: #ff6b6b; text-decoration: none; font-weight: bold; padding: 12px 15px; background: rgba(255,107,107,0.1); border-radius: 5px; transition: all 0.3s; border: 1px solid rgba(255,107,107,0.3);">
             🚪 Salir
         </a>
     </div>
@@ -155,18 +185,19 @@ TEMPLATE = """
         <table>
             <tr><th>ID</th><th>Usuario</th><th>Rol</th><th>Acción</th></tr>
             {% for u in users %}
-            <tr><td>{{ u.id }}</td><td><b>{{ u.username }}</b></td><td>{{ u.role | upper }}</td><td><a href="/dev/reset_password/{{ u.id }}" class="btn btn-dark" style="padding: 6px 12px; font-size: 12px; text-decoration: none;">🔑 Reset</a></td></tr>
+            <tr><td>{{ u.id }}</td><td><b>{{ u.username }}</b></td><td>{{ u.role | upper }}</td><td><a href="/dev/reset_password/{{ u.id }}" class="btn btn-dark" style="padding: 6px 12px; font-size: 16px; text-decoration: none;">🔑 Reset</a></td></tr>
             {% endfor %}
         </table>
 
-    {% elif session.get('role') == 'admin' and request.endpoint == 'admin_dashboard' %}
+    {% elif session.get('role') in ['admin', 'vendedor'] and request.endpoint == 'admin_dashboard' %}
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
             <h2 style="margin: 0;">{{ theme.OPERATIONS.historial }} Dashboard General - Muse Studio</h2>
-            <button type="button" onclick="toggleValuesVisibility()" style="background: var(--bg-dark); color: var(--gold); border: 2px solid var(--gold); padding: 10px 15px; border-radius: 5px; cursor: pointer; font-size: 18px; font-weight: bold;">
+            <button type="button" onclick="toggleValuesVisibility()" style="background: var(--bg-dark); color: var(--gold); border: 2px solid var(--gold); padding: 14px 15px; border-radius: 5px; cursor: pointer; font-size: 18px; font-weight: bold;">
                 👁️ Mostrar
             </button>
         </div>
 
+        {% if session['role'] == 'admin' %}
         <div class="kpi-container">
             <div class="kpi-card">
                 <h3>📊 Productos Activos</h3>
@@ -181,16 +212,22 @@ TEMPLATE = """
                 <p class="kpi-value" style="color: var(--gold);">{{ total_inventory_value | money }}</p>
             </div>
         </div>
+        {% endif %}
 
         <div style="margin-top: 35px; margin-bottom: 25px; border-top: 2px solid #e0e0e0; padding-top: 25px;">
             <h3 style="margin-bottom: 20px;">⚡ Accesos Rápidos (Flujo Operativo)</h3>
             <div class="quick-actions">
-                <a href="/admin/sale" class="btn btn-pink" style="text-align: center; padding: 15px; font-size: 14px; font-weight: bold;">{{ theme.OPERATIONS.salida }}<br>1. Venta</a>
-                <a href="/admin/catalog" class="btn btn-dark" style="text-align: center; padding: 15px; font-size: 14px; font-weight: bold;">{{ theme.OPERATIONS.historial }}<br>2. Catálogo</a>
-                <a href="/admin/product/new" class="btn" style="text-align: center; padding: 15px; font-size: 14px; font-weight: bold; background: #4CAF50; color: white;">{{ theme.ACTIONS.guardar }}<br>3. Nuevo</a>
-                <a href="/admin/purchase" class="btn btn-dark" style="text-align: center; padding: 15px; font-size: 14px; font-weight: bold;">{{ theme.OPERATIONS.entrada }}<br>4. Entrada</a>
-                <a href="/admin/sales-history" class="btn" style="text-align: center; padding: 15px; font-size: 14px; font-weight: bold; background: #FF6B9D; color: white;">📊<br>5. Análisis</a>
-                <a href="/admin/price-guide" class="btn" style="text-align: center; padding: 15px; font-size: 14px; font-weight: bold; background: #2196F3; color: white;">{{ theme.OPERATIONS.historial }}<br>6. Guía</a>
+                <a href="/admin/sale" class="btn btn-pink">💳 Venta</a>
+                <a href="/admin/catalog" class="btn btn-dark">📚 Catálogo</a>
+                {% if session['role'] == 'admin' %}
+                <a href="/admin/product/new" class="btn" style="background: #4CAF50; color: white;">✨ Nuevo</a>
+                <a href="/admin/purchase" class="btn btn-dark">📦 Entrada</a>
+                <a href="/admin/sales-history" class="btn" style="background: #FF6B9D; color: white;">📊 Análisis</a>
+                {% endif %}
+                <a href="/admin/price-guide" class="btn" style="background: #2196F3; color: white;">💰 Guía</a>
+                {% if session['role'] == 'admin' %}
+                <a href="/admin/inventory" class="btn" style="background: #FF9800; color: white;">📦 Inventario</a>
+                {% endif %}
             </div>
         </div>
 
@@ -216,39 +253,23 @@ TEMPLATE = """
             }
         </script>
 
-        <h3 style="margin-top: 30px;">⚠️ Alertas de Stock Bajo o Crítico</h3>
-        <table>
-            <tr><th>{{ theme.INFORMATION.codigo }} Código</th><th>📦 Producto</th><th>{{ theme.INFORMATION.precio }} Categoría</th><th>{{ theme.INFORMATION.stock }} Stock</th><th>⚠️ Mínimo</th><th>💡 Acción</th></tr>
-            {% for p in low_stock_products %}
-            <tr>
-                <td>{{ p.code }}</td>
-                <td><b>{{ p.name }}</b></td>
-                <td>{{ p.category }}</td>
-                <td style="color: #e63946; font-weight: bold;">{{ p.stock }}</td>
-                <td>{{ p.min_stock }}</td>
-                <td><a href="/admin/purchase" class="btn" style="padding: 5px 10px; font-size: 12px;">📥 Reponer</a></td>
-            </tr>
-            {% else %}
-            <tr><td colspan="6" style="text-align: center; color: green;">¡Todo el inventario está en niveles óptimos!</td></tr>
-            {% endfor %}
-        </table>
 
     {% elif request.endpoint == 'cash_flow' %}
         <div style="display: flex; justify-content: space-between; align-items: center;">
             <h2>{{ theme.OPERATIONS.historial }} Flujo de Caja (últimos 30 días)</h2>
-            <a href="/admin" class="btn-dark btn" style="font-size: 13px;">← Volver al Dashboard</a>
+            <a href="/admin" class="btn-dark btn" style="font-size: 18px;">← Volver al Dashboard</a>
         </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 30px;">
             <div style="background: #fff5f8; padding: 20px; border-radius: 8px; text-align: center; border-left: 4px solid #4CAF50;">
-                <h3 style="margin: 0; color: #666; font-size: 14px;">💰 Total Ventas (Entrada)</h3>
+                <h3 style="margin: 0; color: #666; font-size: 18px;">💰 Total Ventas (Entrada)</h3>
                 <p style="font-size: 24px; color: #4CAF50; font-weight: bold; margin: 10px 0;">$ {{ "%.2f"|format(total_sales) }}</p>
             </div>
             <div style="background: #fff5f8; padding: 20px; border-radius: 8px; text-align: center; border-left: 4px solid #f44336;">
-                <h3 style="margin: 0; color: #666; font-size: 14px;">🛒 Total Compras (Salida)</h3>
+                <h3 style="margin: 0; color: #666; font-size: 18px;">🛒 Total Compras (Salida)</h3>
                 <p style="font-size: 24px; color: #f44336; font-weight: bold; margin: 10px 0;">$ {{ "%.2f"|format(total_purchases) }}</p>
             </div>
             <div style="background: {% if balance >= 0 %}#e8f5e9{% else %}#ffebee{% endif %}; padding: 20px; border-radius: 8px; text-align: center; border-left: 4px solid {% if balance >= 0 %}#4CAF50{% else %}#f44336{% endif %};">
-                <h3 style="margin: 0; color: #666; font-size: 14px;">📊 Saldo Neto</h3>
+                <h3 style="margin: 0; color: #666; font-size: 18px;">📊 Saldo Neto</h3>
                 <p style="font-size: 24px; color: {% if balance >= 0 %}#4CAF50{% else %}#f44336{% endif %}; font-weight: bold; margin: 10px 0;">$ {{ "%.2f"|format(balance) }}</p>
             </div>
         </div>
@@ -273,93 +294,105 @@ TEMPLATE = """
     {% elif request.endpoint == 'price_guide' %}
         <div style="display: flex; justify-content: space-between; align-items: center;">
             <h2>{{ theme.OPERATIONS.historial }} Guía de Precios y Ventas</h2>
-            <a href="/admin" class="btn-dark btn" style="font-size: 13px;">← Volver al Dashboard</a>
+            <a href="/admin" class="btn-dark btn" style="font-size: 18px;">← Volver al Dashboard</a>
         </div>
-        <p style="color: #666; margin-bottom: 20px;">Histórico de ventas y precios promedio para cada producto (últimos 15 y 30 días)</p>
-        <table>
-            <tr>
-                <th>{{ theme.INFORMATION.codigo }} SKU</th>
-                <th>📦 Producto</th>
-                <th>{{ theme.INFORMATION.costo }} Costo Prom.</th>
-                <th>📊 Ventas 15d</th>
-                <th>💰 Precio Prom. 15d</th>
-                <th>📊 Ventas 30d</th>
-                <th>💰 Precio Prom. 30d</th>
-                <th>{{ theme.INFORMATION.stock }} Stock</th>
-                <th>{{ theme.INFORMATION.estado }} Estado</th>
-            </tr>
+        <p style="color: #666; margin-bottom: 20px; font-size: 18px;">Histórico de ventas y precios promedio (últimos 15 y 30 días)</p>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 18px; margin-top: 20px;">
             {% for p in product_data %}
-            <tr style="{% if p.status == 'inactivo' %}opacity: 0.6;{% endif %}">
-                <td><code style="background: #f0f0f0; padding: 3px 6px; border-radius: 3px;">{{ p.code }}</code></td>
-                <td><b>{{ p.name }}</b></td>
-                <td>{{ p.avg_cost | money }}</td>
-                <td style="text-align: center;">{{ p.qty_15 }} un</td>
-                <td style="color: #2196F3; font-weight: bold;">{{ p.price_avg_15 | money }}</td>
-                <td style="text-align: center;">{{ p.qty_30 }} un</td>
-                <td style="color: #4CAF50; font-weight: bold;">{{ p.price_avg_30 | money }}</td>
-                <td>{{ p.stock }}</td>
-                <td>
-                    {% if p.status == 'ativo' %}
-                        <span style="color: #4CAF50;">{{ theme.INFORMATION.activo }}</span>
-                    {% else %}
-                        <span style="color: #f44336;">{{ theme.INFORMATION.inactivo }}</span>
-                    {% endif %}
-                </td>
-            </tr>
+            <div style="background: white; border-left: 6px solid var(--pink); border-radius: 10px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); {% if p.status == 'inactivo' %}opacity: 0.6;{% endif %}">
+                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+                    <div>
+                        <div style="font-size: 20px; font-weight: bold; color: #333;">{{ p.name }}</div>
+                        <div style="font-size: 14px; color: #999;">{{ p.code }}</div>
+                    </div>
+                    <span style="background: {% if p.status == 'ativo' %}#e8f5e9{% else %}#ffebee{% endif %}; color: {% if p.status == 'ativo' %}#4CAF50{% else %}#f44336{% endif %}; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: bold;">{{ p.status | upper }}</span>
+                </div>
+                <div style="border-top: 1px solid #eee; padding-top: 12px; margin-bottom: 12px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; font-size: 16px;">
+                        <div>
+                            <div style="color: #999; font-size: 12px; margin-bottom: 4px;">💰 Costo Promedio</div>
+                            <div style="color: #FF6B9D; font-weight: bold; font-size: 18px;">{{ p.avg_cost | money }}</div>
+                        </div>
+                        <div>
+                            <div style="color: #999; font-size: 12px; margin-bottom: 4px;">📊 Stock</div>
+                            <div style="color: #4CAF50; font-weight: bold; font-size: 18px;">{{ p.stock }} un</div>
+                        </div>
+                    </div>
+                </div>
+                <div style="background: #f8f8f8; padding: 14px; border-radius: 8px; font-size: 14px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                        <div style="text-align: center; padding-bottom: 10px; border-bottom: 1px solid #ddd;">
+                            <div style="color: #666; font-size: 12px; margin-bottom: 6px;">📊 15 días</div>
+                            <div style="font-weight: bold;">{{ p.qty_15 }} un</div>
+                            <div style="color: #2196F3; font-weight: bold; font-size: 16px;">{{ p.price_avg_15 | money }}</div>
+                        </div>
+                        <div style="text-align: center; padding-bottom: 10px; border-bottom: 1px solid #ddd;">
+                            <div style="color: #666; font-size: 12px; margin-bottom: 6px;">📊 30 días</div>
+                            <div style="font-weight: bold;">{{ p.qty_30 }} un</div>
+                            <div style="color: #4CAF50; font-weight: bold; font-size: 16px;">{{ p.price_avg_30 | money }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
             {% endfor %}
-        </table>
+        </div>
 
     {% elif request.endpoint == 'admin_catalog' %}
         <div style="display: flex; justify-content: space-between; align-items: center;">
             <h2>{{ theme.OPERATIONS.historial }} Catálogo de Productos</h2>
-            <a href="/admin" class="btn-dark btn" style="font-size: 13px;">← Volver al Dashboard</a>
+            <a href="/admin" class="btn-dark btn" style="font-size: 18px;">← Volver al Dashboard</a>
         </div>
+        {% if session['role'] == 'admin' %}
         <div style="margin: 15px 0;">
             <a href="/admin/product/new" class="btn btn-pink">➕ Nuevo Producto</a>
         </div>
-        <div style="margin-bottom: 15px;">
-            <input type="text" id="filterInput" placeholder="🔍 Buscar en tabla..." style="padding: 10px; border: 1px solid #ccc; border-radius: 5px; width: 300px;">
+        {% endif %}
+        <div style="margin-bottom: 20px;">
+            <input type="text" id="filterInput" placeholder="🔍 Buscar en tabla..." style="padding: 14px; border: 2px solid #D4AF37; border-radius: 5px; width: 100%; max-width: 400px; font-size: 16px;">
         </div>
-        <table id="dataTable">
-            <tr>
-                <th style="cursor: pointer; user-select: none;">{{ theme.INFORMATION.codigo }} SKU ↕️</th>
-                <th style="cursor: pointer; user-select: none;">{{ theme.INFORMATION.nombre }} Nombre ↕️</th>
-                <th style="cursor: pointer; user-select: none;">{{ theme.INFORMATION.precio }} Categoría ↕️</th>
-                <th style="cursor: pointer; user-select: none;">{{ theme.INFORMATION.costo }} Costo Prom. ↕️</th>
-                <th style="cursor: pointer; user-select: none;">💰 Média Salida ↕️</th>
-                <th style="cursor: pointer; user-select: none;">{{ theme.INFORMATION.stock }} Stock ↕️</th>
-                <th style="cursor: pointer; user-select: none;">{{ theme.INFORMATION.estado }} Estado ↕️</th>
-                <th>⚙️ Acciones</th>
-            </tr>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 18px; margin-top: 20px;">
             {% for p in products %}
-            <tr style="{% if p.status == 'inativo' %}opacity: 0.6;{% endif %}" data-sku="{{ p.code }}" data-nombre="{{ p.name }}" data-categoria="{{ p.category }}" data-costo="{{ p.avg_cost }}" data-salida="{{ p.avg_sale }}" data-stock="{{ p.stock }}" data-estado="{{ p.status }}">
-                <td><code style="background: #f0f0f0; padding: 3px 6px; border-radius: 3px;">{{ p.code }}</code></td>
-                <td><b>{{ p.name }}</b></td>
-                <td>{{ p.category }}</td>
-                <td style="color: #FF6B9D; font-weight: bold;">{{ p.avg_cost | money }}</td>
-                <td style="color: #4CAF50; font-weight: bold;">{{ p.avg_sale | money }}</td>
-                <td>{{ p.stock }} {% if p.stock <= p.min_stock %} ⚠️{% endif %}</td>
-                <td>
-                    {% if p.status == 'ativo' %}
-                        <span style="color: #4CAF50; font-weight: bold;">{{ theme.INFORMATION.activo }} Activo</span>
-                    {% else %}
-                        <span style="color: #f44336; font-weight: bold;">{{ theme.INFORMATION.inactivo }} Inactivo</span>
-                    {% endif %}
-                </td>
-                <td>
-                    <a href="/admin/product/edit/{{ p.code }}" class="btn" style="background: #2196F3; color: white; padding: 5px 10px; font-size: 12px; margin: 2px;">
-                        {{ theme.ACTIONS.editar }} Editar
+            <div style="background: white; border-left: 6px solid var(--pink); border-radius: 10px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); {% if p.status == 'inativo' %}opacity: 0.6;{% endif %}" data-sku="{{ p.code }}" data-nombre="{{ p.name }}" data-categoria="{{ p.category }}" data-costo="{{ p.avg_cost }}" data-salida="{{ p.avg_sale }}" data-stock="{{ p.stock }}" data-estado="{{ p.status }}">
+                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+                    <div style="flex: 1;">
+                        <div style="font-size: 20px; font-weight: bold; color: #333;">{{ p.name }}</div>
+                        <div style="font-size: 14px; color: #999; margin-bottom: 8px;">{{ p.code }}</div>
+                        <div style="display: inline-block; background: #f0f0f0; padding: 6px 12px; border-radius: 20px; font-size: 13px; color: #666;">{{ p.category }}</div>
+                    </div>
+                    <span style="background: {% if p.status == 'ativo' %}#e8f5e9{% else %}#ffebee{% endif %}; color: {% if p.status == 'ativo' %}#4CAF50{% else %}#f44336{% endif %}; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: bold;">{{ p.status | upper }}</span>
+                </div>
+                <div style="border-top: 1px solid #eee; padding-top: 12px; margin-bottom: 16px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; font-size: 16px;">
+                        <div>
+                            <div style="color: #999; font-size: 12px; margin-bottom: 4px;">💰 Costo Prom.</div>
+                            <div style="color: #FF6B9D; font-weight: bold; font-size: 18px;">{{ p.avg_cost | money }}</div>
+                        </div>
+                        <div>
+                            <div style="color: #999; font-size: 12px; margin-bottom: 4px;">📊 Venta Prom.</div>
+                            <div style="color: #4CAF50; font-weight: bold; font-size: 18px;">{{ p.avg_sale | money }}</div>
+                        </div>
+                    </div>
+                </div>
+                <div style="background: #f8f8f8; padding: 12px; border-radius: 8px; margin-bottom: 16px; text-align: center;">
+                    <div style="color: #999; font-size: 12px; margin-bottom: 4px;">📦 Stock</div>
+                    <div style="font-size: 20px; font-weight: bold; color: {% if p.stock > p.min_stock %}#4CAF50{% else %}#FF6B9D{% endif %};">{{ p.stock }} un {% if p.stock <= p.min_stock %} ⚠️{% endif %}</div>
+                </div>
+                {% if session['role'] == 'admin' %}
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <a href="/admin/product/edit/{{ p.code }}" class="btn" style="background: #2196F3; color: white; padding: 12px 16px; font-size: 16px;">
+                        ✏️ Editar
                     </a>
-                    <a href="/admin/product/toggle/{{ p.code }}" class="btn" style="background: #FFC107; padding: 5px 10px; font-size: 12px; margin: 2px;">
-                        {% if p.status == 'ativo' %} {{ theme.ACTIONS.desactivar }} Desactivar {% else %} {{ theme.ACTIONS.activar }} Activar {% endif %}
+                    <a href="/admin/product/toggle/{{ p.code }}" class="btn" style="background: #FFC107; color: #000; padding: 12px 16px; font-size: 16px;">
+                        {% if p.status == 'ativo' %} 🔒 Desactivar {% else %} ✅ Activar {% endif %}
                     </a>
-                    <a href="/admin/product/delete/{{ p.code }}" class="btn" style="background: #f44336; color: white; padding: 5px 10px; font-size: 12px; margin: 2px;" onclick="return confirm('¿Seguro de eliminar?');">
-                        {{ theme.ACTIONS.eliminar }} Eliminar
+                    <a href="/admin/product/delete/{{ p.code }}" class="btn" style="background: #f44336; color: white; padding: 12px 16px; font-size: 16px;" onclick="return confirm('¿Seguro de eliminar?');">
+                        🗑️ Eliminar
                     </a>
-                </td>
-            </tr>
+                </div>
+                {% endif %}
+            </div>
             {% endfor %}
-        </table>
+        </div>
         <script>
             const table = document.getElementById('dataTable');
             const filterInput = document.getElementById('filterInput');
@@ -412,39 +445,39 @@ TEMPLATE = """
     {% elif request.endpoint == 'edit_product' %}
         <div style="display: flex; justify-content: space-between; align-items: center;">
             <h2>{{ theme.ACTIONS.editar }} Editar Producto</h2>
-            <a href="/admin/catalog" class="btn-dark btn" style="font-size: 13px;">← Volver al Catálogo</a>
+            <a href="/admin/catalog" class="btn-dark btn" style="font-size: 18px;">← Volver al Catálogo</a>
         </div>
         <form method="POST" style="max-width: 600px;">
             <label>{{ theme.INFORMATION.codigo }} SKU: <strong>{{ edit_product.code }}</strong></label>
 
             <label style="margin-top: 15px;">{{ theme.INFORMATION.nombre }} Nombre del Producto:</label>
-            <input type="text" name="name" value="{{ edit_product.name }}" required style="padding: 10px; border: 1px solid #ccc; border-radius: 5px; width: 100%; box-sizing: border-box;">
+            <input type="text" name="name" value="{{ edit_product.name }}" required style="padding: 14px; border: 1px solid #ccc; border-radius: 5px; width: 100%; box-sizing: border-box;">
 
             <label style="margin-top: 15px;">{{ theme.INFORMATION.precio }} Categoría:</label>
-            <input type="text" name="category" value="{{ edit_product.category }}" required style="padding: 10px; border: 1px solid #ccc; border-radius: 5px; width: 100%; box-sizing: border-box;">
+            <input type="text" name="category" value="{{ edit_product.category }}" required style="padding: 14px; border: 1px solid #ccc; border-radius: 5px; width: 100%; box-sizing: border-box;">
 
-            <div style="display: flex; gap: 10px; margin-top: 20px;">
+            <div style="display: flex; gap: 16px; margin-top: 20px;">
                 <button type="submit" class="btn btn-pink" style="flex: 1;">{{ theme.ACTIONS.guardar }} Guardar Cambios</button>
-                <a href="/admin/catalog" class="btn" style="background: #ccc; flex: 1; text-align: center; padding: 10px;">{{ theme.ACTIONS.cancelar }} Cancelar</a>
+                <a href="/admin/catalog" class="btn" style="background: #ccc; flex: 1; text-align: center; padding: 14px;">{{ theme.ACTIONS.cancelar }} Cancelar</a>
             </div>
-            <p style="color: #666; margin-top: 20px; font-size: 12px;">✓ Todos los textos se convertirán a MAYÚSCULA automáticamente</p>
+            <p style="color: #666; margin-top: 20px; font-size: 16px;">✓ Todos los textos se convertirán a MAYÚSCULA automáticamente</p>
         </form>
 
     {% elif request.endpoint == 'admin_new_product' %}
         <h2>{{ theme.ACTIONS.guardar }} Catálogo de Productos</h2>
-        <p style="color: #666; font-size: 14px;">{{ theme.INFORMATION.codigo }} SKU se genera automáticamente | {{ theme.INFORMATION.nombre }} Nombre | {{ theme.INFORMATION.precio }} Categoría</p>
+        <p style="color: #666; font-size: 18px;">{{ theme.INFORMATION.codigo }} SKU se genera automáticamente | {{ theme.INFORMATION.nombre }} Nombre | {{ theme.INFORMATION.precio }} Categoría</p>
         <form method="POST" style="max-width: 600px;">
             <label>{{ theme.INFORMATION.nombre }} Nombre del Producto:</label>
-            <input type="text" name="name" placeholder="Ej: Labial Mate Velvet" required style="padding: 10px; border: 1px solid #ccc; border-radius: 5px; width: 100%; box-sizing: border-box;">
+            <input type="text" name="name" placeholder="Ej: Labial Mate Velvet" required style="padding: 14px; border: 1px solid #ccc; border-radius: 5px; width: 100%; box-sizing: border-box;">
 
             <label style="margin-top: 15px;">{{ theme.INFORMATION.precio }} Categoría:</label>
-            <input type="text" name="category" placeholder="Ej: Makeup / Beauty / Accessories" required style="padding: 10px; border: 1px solid #ccc; border-radius: 5px; width: 100%; box-sizing: border-box;">
+            <input type="text" name="category" placeholder="Ej: Makeup / Beauty / Accessories" required style="padding: 14px; border: 1px solid #ccc; border-radius: 5px; width: 100%; box-sizing: border-box;">
 
-            <div style="display: flex; gap: 10px; margin-top: 20px;">
+            <div style="display: flex; gap: 16px; margin-top: 20px;">
                 <button type="submit" class="btn btn-pink" style="flex: 1;">{{ theme.ACTIONS.guardar }} Guardar Producto</button>
-                <a href="/admin" class="btn" style="background: #ccc; flex: 1; text-align: center; padding: 10px;">{{ theme.ACTIONS.cancelar }} Cancelar</a>
+                <a href="/admin" class="btn" style="background: #ccc; flex: 1; text-align: center; padding: 14px;">{{ theme.ACTIONS.cancelar }} Cancelar</a>
             </div>
-            <p style="color: #666; margin-top: 20px; font-size: 12px;">✓ Todos los textos se convertirán a MAYÚSCULA automáticamente</p>
+            <p style="color: #666; margin-top: 20px; font-size: 16px;">✓ Todos los textos se convertirán a MAYÚSCULA automáticamente</p>
         </form>
 
     {% elif request.endpoint == 'admin_purchase' %}
@@ -454,29 +487,29 @@ TEMPLATE = """
             <input type="date" name="date" required>
             <label>Buscar Producto (por SKU o Nombre):</label>
             <div style="position: relative; margin-bottom: 15px;">
-                <input type="text" id="productSearch" placeholder="Ej: MS-000001 o Labial Mate" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box;">
-                <ul id="productList" style="position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ccc; border-top: none; border-radius: 0 0 5px 5px; max-height: 300px; overflow-y: auto; list-style: none; padding: 0; margin: 0; display: none; z-index: 1000;">
+                <input type="text" id="productSearch" placeholder="Ej: MS-000001 o Labial Mate" style="width: 100%; padding: 14px; border: 2px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 18px;">
+                <ul id="productList" style="position: absolute; top: 100%; left: 0; right: 0; background: white; border: 2px solid #ccc; border-top: none; border-radius: 0 0 5px 5px; max-height: 400px; overflow-y: auto; list-style: none; padding: 0; margin: 0; display: none; z-index: 1000;">
                 </ul>
             </div>
             <input type="hidden" name="product_code" id="productCode" required>
-            <div id="productInfo" style="background: #f0f0f0; padding: 15px; border-radius: 5px; margin-bottom: 15px; display: none;">
-                <strong>Producto Seleccionado:</strong> <span id="selectedProduct"></span><br>
-                <strong>Stock Actual:</strong> <span id="selectedStock"></span><br>
-                <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #ccc;">
-                    <strong>{{ theme.OPERATIONS.historial }} Historial de Compras:</strong><br>
-                    <small style="color: #666;">
+            <div id="productInfo" style="background: #f0f0f0; padding: 20px; border-radius: 5px; margin-bottom: 15px; display: none; font-size: 18px;">
+                <strong style="font-size: 20px;">Producto Seleccionado:</strong> <span id="selectedProduct" style="font-size: 20px;"></span><br>
+                <strong style="font-size: 20px;">Stock Actual:</strong> <span id="selectedStock" style="font-size: 20px;"></span><br>
+                <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #ccc;">
+                    <strong style="font-size: 18px;">{{ theme.OPERATIONS.historial }} Historial de Compras:</strong><br>
+                    <div style="color: #666; margin-top: 10px; font-size: 18px;">
                         Compras anteriores: <span id="purchaseCount" style="color: #FF6B9D; font-weight: bold;">0</span><br>
                         Costo Promedio: $ <span id="avgCost" style="color: #4CAF50; font-weight: bold;">0.00</span><br>
                         Última Compra: $ <span id="lastCost" style="color: #2196F3; font-weight: bold;">0.00</span> (<span id="lastDate">-</span>)
-                    </small>
+                    </div>
                 </div>
             </div>
             <label>Cantidad Comprada:</label>
             <input type="number" name="quantity" min="1" required>
             <label>Costo Unitario de Adquisición ($):</label>
-            <div style="display: grid; grid-template-columns: 1fr auto; gap: 10px; margin-bottom: 15px;">
-                <input type="number" step="0.01" name="unit_cost" id="unitCost" required style="padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box;">
-                <select id="costSelector" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px; background: white; cursor: pointer; font-size: 14px; min-width: 140px;">
+            <div style="display: grid; grid-template-columns: 1fr auto; gap: 16px; margin-bottom: 15px;">
+                <input type="number" step="0.01" name="unit_cost" id="unitCost" required style="padding: 14px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box;">
+                <select id="costSelector" style="padding: 14px; border: 1px solid #ccc; border-radius: 5px; background: white; cursor: pointer; font-size: 18px; min-width: 140px;">
                     <option value="manual">{{ theme.OPERATIONS.manual }} Manual</option>
                     <option value="avg">{{ theme.OPERATIONS.promedio }} Promedio</option>
                     <option value="last">{{ theme.OPERATIONS.ultima }} Última</option>
@@ -515,7 +548,7 @@ TEMPLATE = """
 
                 filtered.forEach(product => {
                     const li = document.createElement('li');
-                    li.style.cssText = 'padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; transition: background 0.2s;';
+                    li.style.cssText = 'padding: 14px; border-bottom: 1px solid #eee; cursor: pointer; transition: background 0.2s; font-size: 16px;';
                     li.textContent = `${product.code} - ${product.name} (Stock: ${product.stock})`;
                     li.onmouseover = () => li.style.background = '#f0f0f0';
                     li.onmouseout = () => li.style.background = 'white';
@@ -568,70 +601,90 @@ TEMPLATE = """
     {% elif request.endpoint == 'admin_sale' %}
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
             <h2 style="margin: 0;">🛍️ Punto de Venta (POS) - Muse Studio</h2>
-            <a href="/admin" class="btn-dark btn" style="font-size: 13px;">← Volver al Dashboard</a>
+            <a href="/admin" class="btn-dark btn" style="font-size: 18px;">← Volver al Dashboard</a>
         </div>
 
         <div style="display: block; margin-bottom: 220px;">
-            <h3>📦 Catálogo de Productos</h3>
-            <input type="text" id="searchInput" placeholder="🔍 Buscar SKU o nombre..." style="padding: 12px; border: 2px solid #ccc; border-radius: 5px; width: 100%; margin-bottom: 15px; box-sizing: border-box; font-size: 16px;">
+            <h3 style="margin-bottom: 15px; font-size: 22px;">📦 Catálogo de Productos</h3>
+            <input type="text" id="searchInput" placeholder="🔍 Buscar por nombre..." style="padding: 16px; border: 2px solid #D4AF37; border-radius: 8px; width: 100%; margin-bottom: 20px; box-sizing: border-box; font-size: 18px; font-weight: 500;">
 
-            <div id="productsContainer" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px;">
+            <div id="productsContainer" style="display: flex; flex-direction: column; gap: 18px; max-height: 70vh; overflow-y: auto; padding-right: 8px;">
                 <!-- Los productos se cargan aquí con JavaScript -->
             </div>
         </div>
 
         <!-- CARRITO FLOTANTE PARA MOBILE -->
-        <div style="position: fixed; bottom: 0; left: 0; right: 0; background: #fff5f8; border-top: 3px solid var(--pink); box-shadow: 0 -2px 10px rgba(0,0,0,0.15); z-index: 1000;">
-            <div style="padding: 12px; max-width: 1000px; margin: 0 auto;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <div style="position: fixed; bottom: 0; left: 0; right: 0; background: linear-gradient(135deg, #fff5f8 0%, #ffffff 100%); border-top: 4px solid var(--pink); box-shadow: 0 -5px 20px rgba(0,0,0,0.2); z-index: 1000;">
+            <div style="padding: 15px; max-width: 1000px; margin: 0 auto;">
+                <!-- Info del Carrito -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                     <div>
-                        <h4 style="margin: 0; color: var(--pink); font-size: 16px; font-weight: bold;">🛒 Carrito</h4>
-                        <small style="color: #666; font-size: 13px;">Items: <span id="cartCount" style="font-weight: bold; color: var(--pink);">0</span></small>
+                        <h4 style="margin: 0; color: var(--pink); font-size: 18px; font-weight: bold;">🛒 Carrito</h4>
+                        <small style="color: #666; font-size: 18px;">Items: <span id="cartCount" style="font-weight: bold; color: var(--pink); font-size: 20px;">0</span></small>
                     </div>
                     <div style="text-align: right;">
-                        <div style="font-size: 12px; color: #999; margin-bottom: 2px;">Total</div>
-                        <div id="cartTotal" style="font-size: 20px; font-weight: bold; color: #4CAF50;">$ 0.00</div>
+                        <div style="font-size: 16px; color: #999; margin-bottom: 8px;">TOTAL</div>
+                        <div id="cartTotal" style="font-size: 28px; font-weight: bold; color: #4CAF50;">$ 0.00</div>
                     </div>
                 </div>
 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                    <button type="button" onclick="toggleCartModal()" class="btn" style="background: #FFC107; color: black; padding: 10px; font-size: 14px; font-weight: bold; border: none; border-radius: 5px; cursor: pointer;">
+                <!-- Botones - Stack en mobile, grid en desktop -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 12px;">
+                    <button type="button" onclick="toggleCartModal()" class="btn" style="background: #FFC107; color: black; padding: 14px; font-size: 20px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s;">
                         📋 Ver Carrito
+                    </button>
+                    <button type="button" onclick="toggleDiscountMode()" id="discountToggleBtn" class="btn" style="background: #FF9800; color: white; padding: 14px; font-size: 20px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s;">
+                        💰 Descuento
                     </button>
                     <form method="POST" id="checkoutForm" style="margin: 0;">
                         <input type="hidden" name="date" value="{{ today }}">
                         <div id="formItems"></div>
-                        <button type="submit" class="btn btn-pink" style="width: 100%; padding: 10px; font-size: 14px; font-weight: bold; border: none; border-radius: 5px; cursor: pointer;">
-                            💳 Procesar
+                        <button type="submit" class="btn btn-pink" style="width: 100%; padding: 14px; font-size: 16px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; background: var(--pink); color: white; box-shadow: 0 2px 8px rgba(0,0,0,0.15); transition: all 0.2s;">
+                            ✅ PROCESAR
                         </button>
                     </form>
                 </div>
+
+                <!-- Responsive: Stack en mobile muy pequeño -->
+                <style>
+                    @media (max-width: 600px) {
+                        #checkoutForm button {
+                            padding: 16px !important;
+                            font-size: 16px !important;
+                        }
+                    }
+                </style>
             </div>
         </div>
 
-        <!-- MODAL CARRITO DETALLADO -->
-        <div id="cartModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 2000; padding: 0;">
-            <div style="background: white; margin: 0; border-radius: 15px 15px 0 0; position: absolute; bottom: 0; left: 0; right: 0; max-height: 85vh; overflow-y: auto; box-shadow: 0 -5px 20px rgba(0,0,0,0.3);">
-                <div style="background: var(--pink); color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; border-radius: 15px 15px 0 0; position: sticky; top: 0;">
-                    <h3 style="margin: 0; font-size: 18px;">🛒 Detalles del Carrito</h3>
-                    <button type="button" onclick="toggleCartModal()" style="background: transparent; border: none; color: white; font-size: 28px; cursor: pointer; padding: 0; width: 30px; height: 30px;">✕</button>
-                </div>
+        <!-- MODAL CARRITO FULLSCREEN -->
+        <div id="cartModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: white; z-index: 3000; padding: 0; overflow: hidden; flex-direction: column;">
+            <!-- Header -->
+            <div style="background: var(--pink); color: white; padding: 25px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.15);">
+                <h2 style="margin: 0; font-size: 32px; font-weight: bold;">🛒 Tu Carrito</h2>
+                <button type="button" onclick="toggleCartModal()" style="background: rgba(255,255,255,0.3); border: none; color: white; font-size: 40px; cursor: pointer; padding: 0; border-radius: 50%; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; font-weight: bold;">✕</button>
+            </div>
 
-                <div id="cartItemsModal" style="padding: 15px; min-height: 100px;">
-                    <p style="text-align: center; color: #999; margin: 40px 0; font-size: 16px;">Carrito vacío</p>
-                </div>
+            <!-- Contenido Items - Scroll -->
+            <div id="cartItemsModal" style="padding: 25px; flex: 1; overflow-y: auto;">
+                <p style="text-align: center; color: #999; margin: 80px 0; font-size: 22px;">Carrito vacío</p>
+            </div>
 
-                <div style="background: #f0f0f0; padding: 15px; border-top: 1px solid #e0e0e0; position: sticky; bottom: 0;">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 18px; font-weight: bold;">
-                        <span>Total:</span>
-                        <span id="cartTotalModal" style="color: #4CAF50;">$ 0.00</span>
-                    </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                        <button type="button" onclick="toggleCartModal()" class="btn" style="background: #FFC107; color: black; padding: 12px; font-size: 14px; font-weight: bold; border: none; border-radius: 5px; cursor: pointer;">
+            <!-- Footer Total y Botones -->
+            <div style="background: #f8f8f8; padding: 25px; border-top: 3px solid #D4AF37; flex-shrink: 0; box-shadow: 0 -4px 10px rgba(0,0,0,0.1);">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 25px; font-size: 32px; font-weight: bold; padding: 15px 0; border-bottom: 2px solid #DDD;">
+                    <span style="color: #333;">TOTAL:</span>
+                    <span id="cartTotalModal" style="color: #4CAF50;">$ 0.00</span>
+                </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
+                        <button type="button" onclick="toggleCartModal()" class="btn" style="background: #FFC107; color: black; padding: 22px; font-size: 20px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; min-height: 60px;">
                             ← Seguir Comprando
                         </button>
-                        <button type="button" onclick="clearCart()" class="btn" style="background: #f44336; color: white; padding: 12px; font-size: 14px; font-weight: bold; border: none; border-radius: 5px; cursor: pointer;">
-                            🗑️ Limpiar Todo
+                        <button type="button" onclick="toggleDiscountMode()" id="discountToggleBtn" class="btn" style="background: #FF9800; color: white; padding: 22px; font-size: 20px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; min-height: 60px;">
+                            💰 Descuento
+                        </button>
+                        <button type="button" onclick="clearCart()" class="btn" style="background: #f44336; color: white; padding: 22px; font-size: 20px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; min-height: 60px;">
+                            🗑️ Limpiar
                         </button>
                     </div>
                 </div>
@@ -641,10 +694,19 @@ TEMPLATE = """
         <script>
             const productsData = {{ products_data | safe }};
             let cart = [];
+            let discountMode = false;
 
             function toggleCartModal() {
                 const modal = document.getElementById('cartModal');
                 modal.style.display = modal.style.display === 'none' ? 'block' : 'none';
+                updateCartModal();
+            }
+
+            function toggleDiscountMode() {
+                discountMode = !discountMode;
+                const btn = document.getElementById('discountToggleBtn');
+                btn.style.background = discountMode ? '#4CAF50' : '#FF9800';
+                btn.textContent = discountMode ? '✅ Descuento Activo' : '💰 Descuento';
                 updateCartModal();
             }
 
@@ -653,30 +715,42 @@ TEMPLATE = """
                 const searchValue = document.getElementById('searchInput').value.toLowerCase();
                 container.innerHTML = '';
 
-                productsData.forEach(product => {
-                    if (product.code.toLowerCase().includes(searchValue) ||
-                        product.name.toLowerCase().includes(searchValue)) {
+                const filtered = productsData.filter(p =>
+                    p.name.toLowerCase().includes(searchValue) ||
+                    p.code.toLowerCase().includes(searchValue)
+                );
 
-                        const isInactive = product.status !== 'ativo';
-                        const cardHTML = `
-                            <div style="background: white; border: 2px solid #ddd; border-radius: 8px; padding: 12px; cursor: pointer; transition: all 0.3s; text-align: center; ${isInactive ? 'opacity: 0.5; pointer-events: none;' : ''}">
-                                <div style="font-weight: bold; color: #333; margin-bottom: 8px; font-size: 13px;">${product.code}</div>
-                                <div style="font-size: 12px; color: #666; margin-bottom: 8px; line-height: 1.3; min-height: 32px; display: flex; align-items: center; justify-content: center;">${product.name}</div>
-                                <div style="font-size: 11px; color: #999; margin-bottom: 8px; background: #f0f0f0; padding: 4px; border-radius: 3px;">Stock: <strong>${product.stock}</strong></div>
-                                <div style="color: var(--pink); font-weight: bold; margin-bottom: 10px; font-size: 15px;">$ ${product.avg_price.toFixed(2)}</div>
+                if (filtered.length === 0) {
+                    container.innerHTML = '<div style="text-align: center; padding: 40px; color: #999;">No hay productos que coincidan</div>';
+                    return;
+                }
+
+                filtered.forEach(product => {
+                    const isInactive = product.status !== 'ativo';
+                    const cardHTML = `
+                        <div style="background: white; border-left: 6px solid var(--pink); border-radius: 10px; padding: 28px 22px; cursor: pointer; transition: all 0.3s; display: flex; justify-content: space-between; align-items: center; min-height: 140px; ${isInactive ? 'opacity: 0.5; pointer-events: none;' : 'box-shadow: 0 2px 8px rgba(0,0,0,0.12);'}">
+                            <div style="flex: 1;">
+                                <div style="font-weight: bold; color: #333; margin-bottom: 8px; font-size: 24px;">${product.name}</div>
+                                <div style="font-size: 20px; color: #999; margin-bottom: 10px;">${product.code}</div>
+                                <div style="display: flex; gap: 20px; font-size: 18px;">
+                                    <span style="color: var(--pink); font-weight: bold; font-size: 20px;">$ ${product.avg_price.toFixed(2)}</span>
+                                    <span style="color: #666;">Stock: <strong style="color: ${product.stock > 0 ? '#4CAF50' : '#f44336'}; font-size: 20px;">${product.stock}</strong></span>
+                                </div>
+                            </div>
+                            <div>
                                 ${product.stock > 0 ? `
-                                    <button type="button" onclick="addToCart('${product.code}', '${product.name}', ${product.avg_price}, ${product.stock})" class="btn" style="width: 100%; padding: 8px; font-size: 13px; background: var(--pink); color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer;">
+                                    <button type="button" onclick="addToCart('${product.code}', '${product.name}', ${product.avg_price}, ${product.stock})" class="btn" style="padding: 18px 24px; font-size: 18px; background: var(--pink); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; white-space: nowrap; min-height: 60px;">
                                         ➕ Agregar
                                     </button>
                                 ` : `
-                                    <div style="text-align: center; padding: 8px; color: #f44336; font-size: 12px; font-weight: bold; background: #ffebee; border-radius: 5px;">
+                                    <div style="padding: 18px 24px; color: #f44336; font-size: 16px; font-weight: bold; background: #ffebee; border-radius: 8px; text-align: center; min-height: 60px; display: flex; align-items: center;">
                                         ❌ Sin Stock
                                     </div>
                                 `}
                             </div>
-                        `;
-                        container.innerHTML += cardHTML;
-                    }
+                        </div>
+                    `;
+                    container.innerHTML += cardHTML;
                 });
             }
 
@@ -718,10 +792,13 @@ TEMPLATE = """
                 if (cart.length > 0) {
                     let formHTML = '';
                     cart.forEach((item, index) => {
+                        const discount = item.discount || 0;
+                        const finalPrice = item.price - discount;
                         formHTML += `
                             <input type="hidden" name="item_${index}_code" value="${item.code}">
                             <input type="hidden" name="item_${index}_quantity" value="${item.quantity}">
-                            <input type="hidden" name="item_${index}_price" value="${item.price}">
+                            <input type="hidden" name="item_${index}_price" value="${finalPrice}">
+                            <input type="hidden" name="item_${index}_discount" value="${discount}">
                         `;
                     });
                     formItemsDiv.innerHTML = formHTML;
@@ -737,7 +814,8 @@ TEMPLATE = """
                 let total = 0;
                 let itemCount = 0;
                 cart.forEach(item => {
-                    total += item.price * item.quantity;
+                    const discount = item.discount || 0;
+                    total += (item.price - discount) * item.quantity;
                     itemCount += item.quantity;
                 });
 
@@ -745,31 +823,48 @@ TEMPLATE = """
                 document.getElementById('cartCount').textContent = itemCount;
             }
 
+            function updateDiscount(code, discountValue) {
+                const item = cart.find(i => i.code === code);
+                if (item) {
+                    item.discount = Math.max(0, Math.min(discountValue, item.price)); // Máximo = precio unit
+                    updateCart();
+                }
+            }
+
             function updateCartModal() {
                 const cartItemsDiv = document.getElementById('cartItemsModal');
                 const cartTotalModal = document.getElementById('cartTotalModal');
 
                 if (cart.length === 0) {
-                    cartItemsDiv.innerHTML = '<p style="text-align: center; color: #999; margin: 40px 0; font-size: 16px;">Carrito vacío</p>';
+                    cartItemsDiv.innerHTML = '<p style="text-align: center; color: #999; margin: 40px 0; font-size: 20px;">Carrito vacío</p>';
                     cartTotalModal.textContent = '$ 0.00';
                 } else {
                     let html = '';
                     let total = 0;
 
                     cart.forEach(item => {
-                        const subtotal = item.price * item.quantity;
+                        const discount = item.discount || 0;
+                        const finalPrice = item.price - discount;
+                        const subtotal = finalPrice * item.quantity;
                         total += subtotal;
 
                         html += `
-                            <div style="background: #f9f9f9; padding: 12px; margin-bottom: 10px; border-radius: 8px; border-left: 4px solid var(--pink);">
-                                <div style="font-weight: bold; font-size: 14px; margin-bottom: 8px; color: #333;">${item.code}</div>
-                                <div style="font-size: 13px; color: #666; margin-bottom: 10px;">${item.name}</div>
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                                    <span style="font-size: 13px; color: #666;">$ ${item.price.toFixed(2)} × <input type="number" value="${item.quantity}" min="1" max="${item.stock}" onchange="updateQuantity('${item.code}', parseInt(this.value))" style="width: 40px; padding: 4px; text-align: center; border: 1px solid #ccc; border-radius: 3px; font-size: 13px;"></span>
+                            <div style="background: white; padding: 22px; margin-bottom: 16px; border-radius: 10px; border-left: 6px solid var(--pink); box-shadow: 0 2px 6px rgba(0,0,0,0.08);">
+                                <div style="font-weight: bold; font-size: 22px; margin-bottom: 10px; color: #333;">${item.name}</div>
+                                <div style="font-size: 16px; color: #999; margin-bottom: 12px;">${item.code}</div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 18px;">
+                                    <span style="color: #666;">Precio: <strong style="color: var(--pink); font-size: 20px;">$ ${item.price.toFixed(2)}</strong></span>
+                                    <span style="color: #666;">Qty: <input type="number" value="${item.quantity}" min="1" max="${item.stock}" onchange="updateQuantity('${item.code}', parseInt(this.value))" style="width: 70px; padding: 14px; text-align: center; border: 2px solid #ccc; border-radius: 5px; font-size: 18px; font-weight: bold;"></span>
                                 </div>
-                                <div style="display: flex; justify-content: space-between; align-items: center;">
-                                    <strong style="color: #4CAF50; font-size: 14px;">$ ${subtotal.toFixed(2)}</strong>
-                                    <button type="button" onclick="removeFromCart('${item.code}')" class="btn" style="padding: 5px 10px; font-size: 12px; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                                ${discountMode ? `
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 18px;">
+                                    <label style="color: #FF9800; font-weight: bold; font-size: 18px;">💰 Descuento:</label>
+                                    <input type="number" min="0" max="${item.price}" step="0.01" value="${discount}" onchange="updateDiscount('${item.code}', parseFloat(this.value))" placeholder="0.00" style="width: 110px; padding: 14px; text-align: right; border: 2px solid #FF9800; border-radius: 5px; font-size: 18px; font-weight: bold;">
+                                </div>
+                                ` : ''}
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 12px; border-top: 1px solid #eee;">
+                                    <strong style="color: #4CAF50; font-size: 22px;">$ ${subtotal.toFixed(2)}</strong>
+                                    <button type="button" onclick="removeFromCart('${item.code}')" class="btn" style="padding: 12px 18px; font-size: 16px; background: #f44336; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">
                                         ✕ Quitar
                                     </button>
                                 </div>
@@ -800,48 +895,48 @@ TEMPLATE = """
         <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 16px;">
             <h2 style="margin: 0;">📊 Histórico de Ventas - Análisis de Ganancias</h2>
-            <div style="display: flex; gap: 10px;">
-                <button onclick="exportToExcel()" class="btn" style="background: #4CAF50; color: white; padding: 10px 15px; font-size: 13px;">
+            <div style="display: flex; gap: 16px;">
+                <button onclick="exportToExcel()" class="btn" style="background: #4CAF50; color: white; padding: 14px 15px; font-size: 18px;">
                     📥 Exportar a Excel
                 </button>
-                <a href="/admin" class="btn-dark btn" style="font-size: 13px;">← Volver</a>
+                <a href="/admin" class="btn-dark btn" style="font-size: 18px;">← Volver</a>
             </div>
         </div>
 
         <!-- FILTROS -->
-        <div style="background: #f9f9f9; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">
+        <div style="background: #f9f9f9; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px;">
             <div>
-                <label style="font-size: 12px; color: #666;">Desde:</label>
-                <input type="date" id="dateFrom" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+                <label style="font-size: 16px; color: #666;">Desde:</label>
+                <input type="date" id="dateFrom" style="width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
             </div>
             <div>
-                <label style="font-size: 12px; color: #666;">Hasta:</label>
-                <input type="date" id="dateTo" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+                <label style="font-size: 16px; color: #666;">Hasta:</label>
+                <input type="date" id="dateTo" style="width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
             </div>
             <div style="display: flex; align-items: flex-end; gap: 8px;">
-                <button onclick="applyDateFilter()" class="btn btn-pink" style="padding: 8px 15px; font-size: 12px; flex: 1;">Filtrar</button>
-                <button onclick="resetDateFilter()" class="btn" style="padding: 8px 15px; font-size: 12px; background: #ccc; flex: 1;">Limpiar</button>
+                <button onclick="applyDateFilter()" class="btn btn-pink" style="padding: 12px 15px; font-size: 16px; flex: 1;">Filtrar</button>
+                <button onclick="resetDateFilter()" class="btn" style="padding: 12px 15px; font-size: 16px; background: #ccc; flex: 1;">Limpiar</button>
             </div>
         </div>
 
         <!-- ESTADÍSTICAS GENERALES -->
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px;">
             <div style="background: #e8f5e9; border-left: 4px solid #4CAF50; padding: 20px; border-radius: 8px;">
-                <h4 style="margin: 0; color: #666; font-size: 13px;">💰 Ingresos Totales</h4>
+                <h4 style="margin: 0; color: #666; font-size: 18px;">💰 Ingresos Totales</h4>
                 <p style="margin: 10px 0 0 0; font-size: 24px; font-weight: bold; color: #4CAF50;">{{ total_revenue | money }}</p>
             </div>
             <div style="background: #ffebee; border-left: 4px solid #f44336; padding: 20px; border-radius: 8px;">
-                <h4 style="margin: 0; color: #666; font-size: 13px;">📦 Costo Total de Productos</h4>
+                <h4 style="margin: 0; color: #666; font-size: 18px;">📦 Costo Total de Productos</h4>
                 <p style="margin: 10px 0 0 0; font-size: 24px; font-weight: bold; color: #f44336;">{{ total_cost_all | money }}</p>
             </div>
             <div style="background: {% if total_profit >= 0 %}#e3f2fd{% else %}#ffebee{% endif %}; border-left: 4px solid {% if total_profit >= 0 %}#2196F3{% else %}#f44336{% endif %}; padding: 20px; border-radius: 8px;">
-                <h4 style="margin: 0; color: #666; font-size: 13px;">💎 Ganancia Neta</h4>
+                <h4 style="margin: 0; color: #666; font-size: 18px;">💎 Ganancia Neta</h4>
                 <p style="margin: 10px 0 0 0; font-size: 24px; font-weight: bold; color: {% if total_profit >= 0 %}#2196F3{% else %}#f44336{% endif %};">{{ total_profit | money }}</p>
             </div>
             <div style="background: #fff3e0; border-left: 4px solid #FF9800; padding: 20px; border-radius: 8px;">
-                <h4 style="margin: 0; color: #666; font-size: 13px;">📈 Margen de Ganancia Promedio</h4>
+                <h4 style="margin: 0; color: #666; font-size: 18px;">📈 Margen de Ganancia Promedio</h4>
                 <p style="margin: 10px 0 0 0; font-size: 24px; font-weight: bold; color: #FF9800;">{{ "%.1f"|format(avg_profit_margin) }}%</p>
             </div>
         </div>
@@ -851,9 +946,9 @@ TEMPLATE = """
 
         <!-- BOTONES DE VISTA -->
         <div style="margin-bottom: 20px; display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;">
-            <button onclick="changeChartView('daily')" class="btn btn-pink" id="btnDaily" style="padding: 10px 15px; font-size: 13px; font-weight: bold;">📅 Diario</button>
-            <button onclick="changeChartView('weekly')" class="btn" style="padding: 10px 15px; font-size: 13px; background: #2196F3; color: white;">📊 Semanal</button>
-            <button onclick="changeChartView('monthly')" class="btn" style="padding: 10px 15px; font-size: 13px; background: #FF9800; color: white;">📈 Mensual</button>
+            <button onclick="changeChartView('daily')" class="btn btn-pink" id="btnDaily" style="padding: 14px 15px; font-size: 18px; font-weight: bold;">📅 Diario</button>
+            <button onclick="changeChartView('weekly')" class="btn" style="padding: 14px 15px; font-size: 18px; background: #2196F3; color: white;">📊 Semanal</button>
+            <button onclick="changeChartView('monthly')" class="btn" style="padding: 14px 15px; font-size: 18px; background: #FF9800; color: white;">📈 Mensual</button>
         </div>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 40px;">
@@ -903,7 +998,7 @@ TEMPLATE = """
         <!-- TABLA DE HISTÓRICO -->
         <h3>📋 Detalle de Todas las Ventas</h3>
         <div style="margin-bottom: 15px;">
-            <input type="text" id="filterSales" placeholder="🔍 Buscar por NF o fecha..." style="padding: 10px; border: 1px solid #ccc; border-radius: 5px; width: 100%; max-width: 400px; box-sizing: border-box;">
+            <input type="text" id="filterSales" placeholder="🔍 Buscar por NF o fecha..." style="padding: 14px; border: 1px solid #ccc; border-radius: 5px; width: 100%; max-width: 400px; box-sizing: border-box;">
         </div>
 
         <div style="overflow-x: auto;">
@@ -913,6 +1008,7 @@ TEMPLATE = """
                     <th style="cursor: pointer; padding: 12px; text-align: left; border: 1px solid #e0e0e0;">🧾 NF/Invoice ↕️</th>
                     <th style="cursor: pointer; padding: 12px; text-align: center; border: 1px solid #e0e0e0;">📦 Items ↕️</th>
                     <th style="cursor: pointer; padding: 12px; text-align: right; border: 1px solid #e0e0e0;">💰 Ingresos ↕️</th>
+                    <th style="cursor: pointer; padding: 12px; text-align: right; border: 1px solid #e0e0e0;">🏷️ Descuento ↕️</th>
                     <th style="cursor: pointer; padding: 12px; text-align: right; border: 1px solid #e0e0e0;">📉 Costo ↕️</th>
                     <th style="cursor: pointer; padding: 12px; text-align: right; border: 1px solid #e0e0e0;">💎 Ganancia ↕️</th>
                     <th style="cursor: pointer; padding: 12px; text-align: center; border: 1px solid #e0e0e0;">📊 Margen ↕️</th>
@@ -923,13 +1019,14 @@ TEMPLATE = """
                     <td style="padding: 12px; border: 1px solid #e0e0e0; font-weight: bold; color: var(--pink);">{{ inv.invoice_number }}</td>
                     <td style="padding: 12px; border: 1px solid #e0e0e0; text-align: center;">{{ inv.item_count }}</td>
                     <td style="padding: 12px; border: 1px solid #e0e0e0; text-align: right; color: #4CAF50; font-weight: bold;">{{ inv.total_revenue | money }}</td>
+                    <td style="padding: 12px; border: 1px solid #e0e0e0; text-align: right; color: #FF9800; font-weight: bold;">{{ inv.total_discount | money }}</td>
                     <td style="padding: 12px; border: 1px solid #e0e0e0; text-align: right; color: #f44336;">{{ inv.total_cost | money }}</td>
                     <td style="padding: 12px; border: 1px solid #e0e0e0; text-align: right; font-weight: bold; color: {% if inv.profit >= 0 %}#2196F3{% else %}#f44336{% endif %};">{{ inv.profit | money }}</td>
                     <td style="padding: 12px; border: 1px solid #e0e0e0; text-align: center; background: {% if inv.profit_margin >= 30 %}#e8f5e9{% elif inv.profit_margin >= 15 %}#fff3e0{% else %}#ffebee{% endif %};">{{ "%.1f"|format(inv.profit_margin) }}%</td>
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="7" style="padding: 20px; text-align: center; color: #999;">No hay ventas registradas aún</td>
+                    <td colspan="8" style="padding: 20px; text-align: center; color: #999;">No hay ventas registradas aún</td>
                 </tr>
                 {% endfor %}
             </table>
@@ -1175,6 +1272,206 @@ TEMPLATE = """
             window.addEventListener('load', initCharts);
         </script>
 
+    {% elif request.endpoint == 'admin_inventory' %}
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h2>📦 Auditoria de Inventario</h2>
+            <a href="/admin" class="btn-dark btn" style="font-size: 18px;">← Volver</a>
+        </div>
+
+        <table style="width: 100%; border-collapse: collapse;">
+            <tr><th>📅 Fecha</th><th>👤 Usuario</th><th>Estado</th><th>📊 Varianza Total</th><th>❌ Pérdida</th><th>⚙️ Acciones</th></tr>
+            {% for count in counts %}
+            <tr>
+                <td style="padding: 12px; border: 1px solid #e0e0e0;">{{ count.count_date }}</td>
+                <td style="padding: 12px; border: 1px solid #e0e0e0;">{{ count.user_id }}</td>
+                <td style="padding: 12px; border: 1px solid #e0e0e0;"><b>{{ count.status | upper }}</b></td>
+                <td style="padding: 12px; border: 1px solid #e0e0e0;">{{ count.total_variance }}</td>
+                <td style="padding: 12px; border: 1px solid #e0e0e0; color: #f44336; font-weight: bold;">{{ count.total_loss }}</td>
+                <td style="padding: 12px; border: 1px solid #e0e0e0;"><a href="/admin/inventory/{{ count.id }}" class="btn" style="padding: 5px 10px; font-size: 16px;">📋 Ver</a></td>
+            </tr>
+            {% else %}
+            <tr><td colspan="6" style="padding: 20px; text-align: center; color: #999;">Sin conteos aún</td></tr>
+            {% endfor %}
+        </table>
+
+        <br>
+        <form method="POST" style="display: inline;">
+            <button type="submit" class="btn btn-pink" style="padding: 14px 20px;">➕ Iniciar Nueva Conteo</button>
+        </form>
+
+    {% elif request.endpoint == 'view_inventory' %}
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h2>📦 Conteo de Inventario #{{ count.id }} - {{ count.count_date }}</h2>
+            <a href="/admin/inventory" class="btn-dark btn" style="font-size: 18px;">← Volver</a>
+        </div>
+
+        <div style="background: #fff5f8; padding: 15px; border-radius: 5px; margin-bottom: 20px; border-left: 4px solid #FF9800;">
+            <b>Estado:</b> <span style="color: {% if count.status == 'finalizado' %}#4CAF50{% else %}#FF9800{% endif %};">{{ count.status | upper }}</span> |
+            <b>Varianza:</b> {{ total_variance }} |
+            <b>Pérdida Total:</b> <span style="color: #f44336; font-weight: bold;">{{ total_loss }}</span>
+        </div>
+
+        {% if count.status == 'em_progreso' %}
+        <h3>Agregar Producto a Conteo</h3>
+        <form method="POST" style="background: #f9f9f9; padding: 20px; border-radius: 5px; margin-bottom: 20px;">
+            <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 15px;">
+                <div>
+                    <label>Buscar Producto:</label>
+                    <input type="text" id="productSearch" placeholder="Digita nombre o código..." style="width: 100%; padding: 14px; border: 1px solid #ccc; border-radius: 5px;">
+                    <input type="hidden" name="product_code" id="productCode" required>
+                    <div id="productList" style="position: absolute; background: white; border: 1px solid #ccc; border-radius: 5px; max-height: 200px; overflow-y: auto; width: 300px; display: none;"></div>
+                    <div id="productInfo" style="margin-top: 10px; padding: 14px; background: #e8f5e9; border-radius: 5px; display: none;">
+                        <b>Estoque Sistema:</b> <span id="systemStockDisplay">-</span>
+                    </div>
+                </div>
+                <div>
+                    <label>Cantidad Física:</label>
+                    <input type="number" name="physical_count" id="physicalCount" min="0" required style="width: 100%; padding: 14px; border: 1px solid #ccc; border-radius: 5px;">
+                </div>
+                <div>
+                    <label>Motivo (si aplica):</label>
+                    <select name="loss_reason" style="width: 100%; padding: 14px; border: 1px solid #ccc; border-radius: 5px;">
+                        <option value="">-- Sin motivo --</option>
+                        <option value="QUEBRA_DANO">Quebra/Daño</option>
+                        <option value="ROUBO_FURTO">Robo/Furto</option>
+                        <option value="VENCIMIENTO">Vencimiento</option>
+                        <option value="PERDA_DESCONOCIDA">Pérdida Desconocida</option>
+                        <option value="AJUSTE_ANTERIOR">Ajuste Anterior</option>
+                        <option value="OTRO">Otro</option>
+                    </select>
+                </div>
+            </div>
+            <textarea name="notes" placeholder="Notas adicionales..." style="width: 100%; padding: 14px; border: 1px solid #ccc; border-radius: 5px; margin-top: 10px; height: 60px;"></textarea>
+            <button type="submit" class="btn btn-pink" style="padding: 14px 20px; margin-top: 10px;">✅ Agregar Producto</button>
+        </form>
+
+        <script>
+            const productos = {{ products_json | safe }};
+            const productSearch = document.getElementById('productSearch');
+            const productList = document.getElementById('productList');
+            const productCode = document.getElementById('productCode');
+            const productInfo = document.getElementById('productInfo');
+            const systemStockDisplay = document.getElementById('systemStockDisplay');
+
+            productSearch.addEventListener('input', (e) => {
+                const query = e.target.value.toLowerCase();
+                if (query.length < 1) {
+                    productList.style.display = 'none';
+                    return;
+                }
+
+                const filtered = productos.filter(p =>
+                    p.code.toLowerCase().includes(query) ||
+                    p.name.toLowerCase().includes(query)
+                );
+
+                productList.innerHTML = filtered.map(p =>
+                    `<div style="padding: 14px; border-bottom: 1px solid #eee; cursor: pointer; font-size: 16px;" onclick="selectProduct('${p.code}', '${p.name}', ${p.system_stock || 0})">
+                        <b style="font-size: 18px;">${p.code}</b> - ${p.name}<br>
+                        <div style="color: #666; font-size: 20px; margin-top: 5px;">Stock sistema: ${p.system_stock || 0}</div>
+                    </div>`
+                ).join('');
+
+                productList.style.display = filtered.length > 0 ? 'block' : 'none';
+            });
+
+            function selectProduct(code, name, systemStock) {
+                productCode.value = code;
+                productSearch.value = `${code} - ${name}`;
+                systemStockDisplay.textContent = systemStock;
+                productInfo.style.display = 'block';
+                productList.style.display = 'none';
+                document.getElementById('physicalCount').focus();
+            }
+        </script>
+        {% endif %}
+
+        <h3>Productos Contados</h3>
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse;">
+                <tr style="background-color: #fff5f8;">
+                    <th style="padding: 12px; text-align: left; border: 1px solid #e0e0e0;">Código</th>
+                    <th style="padding: 12px; text-align: center; border: 1px solid #e0e0e0;">Sistema</th>
+                    <th style="padding: 12px; text-align: center; border: 1px solid #e0e0e0;">Físico</th>
+                    <th style="padding: 12px; text-align: center; border: 1px solid #e0e0e0;">Varianza</th>
+                    <th style="padding: 12px; text-align: left; border: 1px solid #e0e0e0;">Tipo</th>
+                    <th style="padding: 12px; text-align: left; border: 1px solid #e0e0e0;">Motivo / Estado</th>
+                    <th style="padding: 12px; text-align: center; border: 1px solid #e0e0e0;">⚙️</th>
+                </tr>
+                {% for item in items %}
+                <tr style="background: {% if item.status == 'analisis' %}#FFF3E0{% elif item.variance_type == 'FALTA' %}#ffebee{% elif item.variance_type == 'EXCESO' %}#fff3e0{% else %}#e8f5e9{% endif %};">
+                    <td style="padding: 12px; border: 1px solid #e0e0e0;"><b>{{ item.product_code }}</b></td>
+                    <td style="padding: 12px; border: 1px solid #e0e0e0; text-align: center;">{{ item.system_quantity }}</td>
+                    <td style="padding: 12px; border: 1px solid #e0e0e0; text-align: center;">{{ item.physical_count }}</td>
+                    <td style="padding: 12px; border: 1px solid #e0e0e0; text-align: center; font-weight: bold; color: {% if item.variance_type == 'FALTA' %}#f44336{% elif item.variance_type == 'EXCESO' %}#FF9800{% else %}#4CAF50{% endif %};">{{ item.variance }}</td>
+                    <td style="padding: 12px; border: 1px solid #e0e0e0;">{{ item.variance_type }}</td>
+                    <td style="padding: 12px; border: 1px solid #e0e0e0;">
+                        {% if item.status == 'analisis' %}
+                            <span style="background: #FF9800; color: white; padding: 5px 8px; border-radius: 3px; font-size: 16px;">🔍 Análisis</span>
+                        {% else %}
+                            {{ item.loss_reason or '-' }}
+                        {% endif %}
+                    </td>
+                    <td style="padding: 12px; border: 1px solid #e0e0e0; text-align: center;">
+                        {% if item.status == 'analisis' %}
+                            <button onclick="openEditModal({{ item.id }}, '{{ item.loss_reason }}', '{{ item.notes }}')" class="btn" style="padding: 5px 10px; font-size: 18px; background: #FF9800; color: white;">✏️ Resolver</button>
+                        {% else %}
+                            <a href="/admin/inventory/{{ count.id }}/remove/{{ item.id }}" class="btn" style="padding: 5px 10px; font-size: 18px; background: #f44336;">🗑️</a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="7" style="padding: 20px; text-align: center; color: #999;">Sin items agregados aún</td></tr>
+                {% endfor %}
+            </table>
+        </div>
+
+        <!-- Modal para resolver análisis -->
+        <div id="editModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; justify-content: center; align-items: center;">
+            <div style="background: white; padding: 40px; border-radius: 10px; max-width: 700px; width: 90%; max-height: 90vh; overflow-y: auto;">
+                <h2 style="font-size: 26px; margin-top: 0;">Resolver Análisis</h2>
+                <form method="POST" style="display: flex; flex-direction: column; gap: 20px;">
+                    <input type="hidden" name="action" value="update_reason">
+                    <input type="hidden" name="item_id" id="editItemId">
+                    <div>
+                        <label style="font-size: 18px; font-weight: 600; display: block; margin-bottom: 10px;">Motivo de Pérdida:</label>
+                        <select name="loss_reason" id="editReason" required style="width: 100%; padding: 14px; border: 2px solid #ccc; border-radius: 5px; font-size: 18px;">
+                            <option value="QUEBRA_DANO">Quebra/Daño</option>
+                            <option value="ROUBO_FURTO">Robo/Furto</option>
+                            <option value="VENCIMIENTO">Vencimiento</option>
+                            <option value="PERDA_DESCONOCIDA">Pérdida Desconocida</option>
+                            <option value="AJUSTE_ANTERIOR">Ajuste Anterior</option>
+                            <option value="OTRO">Otro</option>
+                        </select>
+                    </div>
+                    <textarea name="notes" id="editNotes" placeholder="Notas..." style="width: 100%; padding: 14px; border: 2px solid #ccc; border-radius: 5px; height: 120px; font-size: 18%;"></textarea>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <button type="submit" class="btn btn-pink" style="padding: 16px 20px; font-size: 18px;">✅ Guardar</button>
+                        <button type="button" onclick="closeEditModal()" class="btn btn-dark" style="padding: 16px 20px; font-size: 18px;">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <script>
+            function openEditModal(itemId, reason, notes) {
+                document.getElementById('editItemId').value = itemId;
+                document.getElementById('editReason').value = reason || '';
+                document.getElementById('editNotes').value = notes || '';
+                document.getElementById('editModal').style.display = 'flex';
+            }
+            function closeEditModal() {
+                document.getElementById('editModal').style.display = 'none';
+            }
+        </script>
+
+        {% if count.status == 'em_progreso' and items %}
+        <div style="margin-top: 20px; display: flex; gap: 16px;">
+            <a href="/admin/inventory/{{ count.id }}/finalize" class="btn" style="padding: 14px 20px; background: #4CAF50; color: white;">✅ Finalizar Conteo</a>
+            <a href="/admin/inventory" class="btn btn-dark" style="padding: 14px 20px;">Cancelar</a>
+        </div>
+        {% endif %}
+
     {% endif %}
 </div>
 </body>
@@ -1229,7 +1526,7 @@ def reset_password(user_id):
 
 @app.route('/admin')
 def admin_dashboard():
-    if session.get('role') != 'admin': return redirect(url_for('login'))
+    if session.get('role') not in ['admin', 'vendedor']: return redirect(url_for('login'))
     
     products = Product.query.all()
     total_products = len(products)
@@ -1270,6 +1567,7 @@ def sales_history():
     for invoice in invoices:
         items = InvoiceItem.query.filter_by(invoice_number=invoice.invoice_number).all()
         total_cost = 0
+        total_discount = 0
 
         for item in items:
             purchases = Purchase.query.filter_by(product_code=item.product_code).all()
@@ -1278,6 +1576,10 @@ def sales_history():
                 total_qty = sum(p.quantity for p in purchases)
                 unit_cost = total_cost_item / total_qty if total_qty > 0 else 0
                 total_cost += unit_cost * item.quantity
+
+            # Calcular descuento total
+            discount = item.discount if hasattr(item, 'discount') else 0
+            total_discount += discount * item.quantity
 
             # Análisis por producto
             if item.product_code not in product_analysis:
@@ -1288,12 +1590,14 @@ def sales_history():
                     'quantity_sold': 0,
                     'total_revenue': 0,
                     'total_cost': 0,
-                    'sales_count': 0
+                    'sales_count': 0,
+                    'total_discount': 0
                 }
 
             product_analysis[item.product_code]['quantity_sold'] += item.quantity
             product_analysis[item.product_code]['total_revenue'] += item.subtotal
             product_analysis[item.product_code]['sales_count'] += 1
+            product_analysis[item.product_code]['total_discount'] += discount * item.quantity
 
             purchases = Purchase.query.filter_by(product_code=item.product_code).all()
             if purchases:
@@ -1310,6 +1614,7 @@ def sales_history():
             'date': invoice.date,
             'total_revenue': invoice.total_amount,
             'total_cost': round(total_cost, 2),
+            'total_discount': round(total_discount, 2),
             'profit': round(profit, 2),
             'profit_margin': round(profit_margin, 2),
             'item_count': len(items)
@@ -1343,9 +1648,12 @@ def sales_history():
     # VISTA SEMANAL
     chart_data_weekly = {}
     for inv in invoice_details:
-        # Convertir fecha DD/MM/YYYY a datetime
-        day, month, year = map(int, inv['date'].split('/'))
-        date_obj = datetime(year, month, day)
+        # Convertir fecha a datetime
+        if isinstance(inv['date'], str):
+            day, month, year = map(int, inv['date'].split('/'))
+            date_obj = datetime(year, month, day)
+        else:
+            date_obj = datetime.combine(inv['date'], time.min)
         week_key = f"Sem {date_obj.strftime('%U/%Y')}"
 
         if week_key not in chart_data_weekly:
@@ -1366,7 +1674,12 @@ def sales_history():
     # VISTA MENSUAL
     chart_data_monthly = {}
     for inv in invoice_details:
-        day, month, year = map(int, inv['date'].split('/'))
+        if isinstance(inv['date'], str):
+            day, month, year = map(int, inv['date'].split('/'))
+        else:
+            year = inv['date'].year
+            month = inv['date'].month
+            day = inv['date'].day
         month_key = f"{month:02d}/{year}"
 
         if month_key not in chart_data_monthly:
@@ -1387,9 +1700,9 @@ def sales_history():
     # Ordenar por fecha descendente para tabla
     invoice_details = sorted(invoice_details, key=lambda x: x['date'], reverse=True)
 
-    chart_json = json.dumps(chart_data_daily)
-    chart_json_weekly = json.dumps(chart_data_weekly_list)
-    chart_json_monthly = json.dumps(chart_data_monthly_list)
+    chart_json = json.dumps(chart_data_daily, cls=DateEncoder)
+    chart_json_weekly = json.dumps(chart_data_weekly_list, cls=DateEncoder)
+    chart_json_monthly = json.dumps(chart_data_monthly_list, cls=DateEncoder)
 
     return render_template_string(TEMPLATE,
                                  invoice_details=invoice_details,
@@ -1441,7 +1754,7 @@ def cash_flow():
 
 @app.route('/admin/price-guide')
 def price_guide():
-    if session.get('role') != 'admin': return redirect(url_for('login'))
+    if session.get('role') not in ['admin', 'vendedor']: return redirect(url_for('login'))
     from datetime import datetime, timedelta
 
     products = Product.query.all()
@@ -1492,7 +1805,7 @@ def price_guide():
 
 @app.route('/admin/catalog')
 def admin_catalog():
-    if session.get('role') != 'admin': return redirect(url_for('login'))
+    if session.get('role') not in ['admin', 'vendedor']: return redirect(url_for('login'))
     products = Product.query.all()
     for p in products:
         tp = db.session.query(db.func.sum(Purchase.quantity)).filter_by(product_code=p.code).scalar() or 0
@@ -1576,7 +1889,7 @@ def admin_purchase():
 
 @app.route('/admin/sale', methods=['GET', 'POST'])
 def admin_sale():
-    if session.get('role') != 'admin': return redirect(url_for('login'))
+    if session.get('role') not in ['admin', 'vendedor']: return redirect(url_for('login'))
 
     if request.method == 'POST':
         from datetime import datetime
@@ -1596,19 +1909,21 @@ def admin_sale():
 
             quantity = int(request.form.get(f'item_{i}_quantity', 0))
             unit_price = float(request.form.get(f'item_{i}_price', 0))
+            discount = float(request.form.get(f'item_{i}_discount', 0))
 
-            if quantity > 0 and unit_price > 0:
+            if quantity > 0 and unit_price >= 0:
                 subtotal = quantity * unit_price
                 items.append({
                     'product_code': code,
                     'quantity': quantity,
                     'unit_price': unit_price,
+                    'discount': discount,
                     'subtotal': subtotal
                 })
                 total_amount += subtotal
 
-                # Registrar la venta individual para compatibilidad
-                db.session.add(Sale(date=date, product_code=code, quantity=quantity, unit_price=unit_price))
+                # Registrar la venta individual para compatibilidad (con precio después del descuento)
+                db.session.add(Sale(date=date_obj, product_code=code, quantity=quantity, unit_price=unit_price))
 
             i += 1
 
@@ -1628,6 +1943,7 @@ def admin_sale():
                 product_code=item['product_code'],
                 quantity=item['quantity'],
                 unit_price=item['unit_price'],
+                discount=item.get('discount', 0),
                 subtotal=item['subtotal']
             )
             db.session.add(invoice_item)
@@ -1699,6 +2015,152 @@ def delete_prod(code):
     if delete_product(code):
         flash(f'Producto {code} eliminado correctamente.')
     return redirect(url_for('admin_catalog'))
+
+# ==================== INVENTARIO / AUDITORIA ====================
+
+@app.route('/admin/inventory', methods=['GET', 'POST'])
+def admin_inventory():
+    if session.get('role') != 'admin': return redirect(url_for('login'))
+
+    if request.method == 'POST':
+        count = InventoryCount(count_date=date.today(), user_id=session.get('user_id'))
+        db.session.add(count)
+        db.session.commit()
+        flash(f'Conteo iniciado - ID: {count.id}')
+        return redirect(url_for('view_inventory', count_id=count.id))
+
+    counts = InventoryCount.query.order_by(InventoryCount.count_date.desc()).all()
+    return render_template_string(TEMPLATE,
+                                 page='inventory_list',
+                                 counts=counts,
+                                 theme=Theme)
+
+@app.route('/admin/inventory/<int:count_id>', methods=['GET', 'POST'])
+def view_inventory(count_id):
+    if session.get('role') != 'admin': return redirect(url_for('login'))
+
+    count = InventoryCount.query.get_or_404(count_id)
+    items = InventoryCountItem.query.filter_by(inventory_count_id=count_id).all()
+    products = Product.query.all()
+
+    total_variance = sum(item.variance for item in items)
+    total_loss = sum(abs(item.variance) for item in items if item.variance_type == 'FALTA')
+
+    if request.method == 'POST':
+        action = request.form.get('action', 'add')
+
+        if action == 'update_reason':
+            item_id = request.form.get('item_id')
+            loss_reason = request.form.get('loss_reason', '')
+            notes = request.form.get('notes', '')
+            item = InventoryCountItem.query.get_or_404(item_id)
+            item.loss_reason = loss_reason
+            item.notes = notes
+            item.status = 'resuelto'
+            db.session.commit()
+            flash(f'Motivo actualizado para {item.product_code}')
+            return redirect(url_for('view_inventory', count_id=count_id))
+
+        code = request.form.get('product_code')
+        physical_count = int(request.form.get('physical_count', 0))
+        loss_reason = request.form.get('loss_reason', '')
+        notes = request.form.get('notes', '')
+
+        product = Product.query.filter_by(code=code).first()
+        if not product:
+            flash('Producto no encontrado')
+            return redirect(url_for('view_inventory', count_id=count_id))
+
+        # Calcular stock real del sistema (compras - ventas)
+        purchases = Purchase.query.filter_by(product_code=code).with_entities(func.sum(Purchase.quantity)).scalar() or 0
+        sales = Sale.query.filter_by(product_code=code).with_entities(func.sum(Sale.quantity)).scalar() or 0
+        system_quantity = purchases - sales
+
+        existing = InventoryCountItem.query.filter_by(
+            inventory_count_id=count_id,
+            product_code=code
+        ).first()
+
+        variance = physical_count - system_quantity
+        variance_type = 'FALTA' if variance < 0 else ('EXCESO' if variance > 0 else 'OK')
+
+        # Si no hay motivo y hay falta, status es "analisis"
+        status = 'resuelto' if (loss_reason or variance_type != 'FALTA') else 'analisis'
+
+        if existing:
+            existing.physical_count = physical_count
+            existing.variance = variance
+            existing.variance_type = variance_type
+            existing.loss_reason = loss_reason
+            existing.notes = notes
+            existing.status = status
+        else:
+            item = InventoryCountItem(
+                inventory_count_id=count_id,
+                product_code=code,
+                system_quantity=system_quantity,
+                physical_count=physical_count,
+                variance=variance,
+                variance_type=variance_type,
+                loss_reason=loss_reason,
+                notes=notes,
+                status=status
+            )
+            db.session.add(item)
+
+        db.session.commit()
+        flash(f'Producto {code} agregado a conteo')
+        return redirect(url_for('view_inventory', count_id=count_id))
+
+    # Calcular stock para cada producto
+    products_with_stock = []
+    for p in products:
+        purchases = Purchase.query.filter_by(product_code=p.code).with_entities(func.sum(Purchase.quantity)).scalar() or 0
+        sales = Sale.query.filter_by(product_code=p.code).with_entities(func.sum(Sale.quantity)).scalar() or 0
+        system_stock = purchases - sales
+        products_with_stock.append({
+            'code': p.code,
+            'name': p.name,
+            'system_stock': system_stock
+        })
+
+    return render_template_string(TEMPLATE,
+                                 page='inventory_detail',
+                                 count=count,
+                                 items=items,
+                                 products=products,
+                                 products_json=json.dumps(products_with_stock, cls=DateEncoder),
+                                 total_variance=total_variance,
+                                 total_loss=total_loss,
+                                 theme=Theme)
+
+@app.route('/admin/inventory/<int:count_id>/remove/<item_id>')
+def remove_inventory_item(count_id, item_id):
+    if session.get('role') != 'admin': return redirect(url_for('login'))
+
+    item = InventoryCountItem.query.get_or_404(item_id)
+    db.session.delete(item)
+    db.session.commit()
+    flash('Item removido del conteo')
+    return redirect(url_for('view_inventory', count_id=count_id))
+
+@app.route('/admin/inventory/<int:count_id>/finalize')
+def finalize_inventory(count_id):
+    if session.get('role') != 'admin': return redirect(url_for('login'))
+
+    count = InventoryCount.query.get_or_404(count_id)
+    items = InventoryCountItem.query.filter_by(inventory_count_id=count_id).all()
+
+    total_variance = sum(item.variance for item in items)
+    total_loss = sum(abs(item.variance) for item in items if item.variance_type == 'FALTA')
+
+    count.status = 'finalizado'
+    count.total_variance = total_variance
+    count.total_loss = total_loss
+    db.session.commit()
+
+    flash(f'Conteo finalizado. Perdida total: {total_loss} unidades')
+    return redirect(url_for('view_inventory', count_id=count_id))
 
 @app.route('/logout')
 def logout():

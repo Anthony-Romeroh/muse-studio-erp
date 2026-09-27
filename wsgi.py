@@ -5,7 +5,7 @@ import os
 from dotenv import load_dotenv
 
 # Carrega variáveis de ambiente
-load_dotenv()
+load_dotenv(override=True)
 
 # Import app después de configurar variables
 from app import app
