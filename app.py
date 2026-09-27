@@ -128,7 +128,6 @@ TEMPLATE = """
             <input type="password" name="password" required>
             <button type="submit" class="btn">Entrar</button>
         </form>
-        <p><small>• Dev: <b>dev</b> / dev123<br>• Admin: <b>admin</b> / admin123</small></p>
 
     {% elif session.get('role') == 'dev' %}
         <h2>Panel de Desarrollador - Gestión de Usuarios</h2>
@@ -146,9 +145,9 @@ TEMPLATE = """
             <button type="submit" class="btn btn-pink">Crear Usuario</button>
         </form>
         <table>
-            <tr><th>ID</th><th>Usuario</th><th>Rol</th></tr>
+            <tr><th>ID</th><th>Usuario</th><th>Rol</th><th>Acción</th></tr>
             {% for u in users %}
-            <tr><td>{{ u.id }}</td><td><b>{{ u.username }}</b></td><td>{{ u.role | upper }}</td></tr>
+            <tr><td>{{ u.id }}</td><td><b>{{ u.username }}</b></td><td>{{ u.role | upper }}</td><td><a href="/dev/reset_password/{{ u.id }}" class="btn btn-dark" style="padding: 6px 12px; font-size: 12px; text-decoration: none;">🔑 Reset</a></td></tr>
             {% endfor %}
         </table>
 
@@ -1205,6 +1204,19 @@ def create_user():
     db.session.add(User(username=new_username, password=hashed_pw, role=role))
     db.session.commit()
     flash(f'Usuario "{new_username}" creado con éxito.')
+    return redirect(url_for('dev_panel'))
+
+@app.route('/dev/reset_password/<int:user_id>')
+def reset_password(user_id):
+    if session.get('role') != 'dev': return redirect(url_for('login'))
+    user = User.query.get(user_id)
+    if not user: return redirect(url_for('dev_panel'))
+
+    new_password = f"{user.username}123"
+    hashed_pw = generate_password_hash(new_password, method='pbkdf2:sha256')
+    user.password = hashed_pw
+    db.session.commit()
+    flash(f'Contraseña de "{user.username}" reseteada a: <b>{new_password}</b>')
     return redirect(url_for('dev_panel'))
 
 @app.route('/admin')
