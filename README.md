@@ -9,7 +9,7 @@ Sistema ERP completo para **Muse Studio** - Mayorista de Belleza & Accesorios.
 - Búsqueda rápida de productos
 - Generación automática de NF
 - Cálculo automático de totales
-
+- exe
 ### 📦 Gestión de Inventário
 - SKU automático (MS-000001, MS-000002...)
 - Stock en tiempo real
