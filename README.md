@@ -8,6 +8,7 @@ Sistema ERP completo para **Muse Studio** - Mayorista Online de Belleza, Makeup 
 
 ### 🛒 Punto de Venta (POS) - Mobile First
 - Carrinho de compras dinámico fullscreen
+- **Editar cantidad en carrito** - Sin límite de stock
 - Búsqueda rápida de productos por nombre/código
 - Generación automática de facturas (NF)
 - Cálculo automático de totales con descuentos
@@ -18,6 +19,9 @@ Sistema ERP completo para **Muse Studio** - Mayorista Online de Belleza, Makeup 
 ### 📦 Gestión de Inventário
 - SKU automático (MS-000001, MS-000002...)
 - Stock en tiempo real con cálculo dinámico
+- **Editar cantidad en catálogo** - Ajustar stock directamente
+- **Cantidad inicial al crear producto** - Cargar estoque desde el inicio
+- Editar precios de costo y venta en catálogo
 - Costo promedio de productos
 - Estados: Ativo / Inactivo
 - Alertas de stock bajo
@@ -73,12 +77,7 @@ Abre: `http://localhost:5000`
 
 ### Base de Datos Local (SQLite)
 
-El proyecto viene pre-configurado con SQLite. Para recrear:
-
-```bash
-python init_db.py      # Recrea todas las tablas
-python load_stock.py   # Carga 13 productos + estoque
-```
+El proyecto viene pre-configurado con SQLite y se crea automáticamente al iniciar.
 
 ---
 
@@ -116,21 +115,18 @@ http://192.168.X.X:5000/admin
 
 ## 🌍 Deployment - Vercel + Supabase (Producción)
 
-### 1. Crear Base de Datos Supabase
+### 1. Restaurar Base de Datos Supabase
 
-En Supabase Dashboard, ejecuta los scripts SQL:
+En Supabase Dashboard SQL Editor:
 
 ```sql
--- Script 1: supabase_init_complete.sql (crea tablas)
--- Script 2: supabase_insert_products.sql (carga datos)
+1. Abre: https://supabase.com/dashboard → tu proyecto
+2. SQL Editor → New Query
+3. Copia TODO de: supabase_restore_complete.sql
+4. RUN
 ```
 
-O en SQL Editor:
-```
-1. Abre SQL Editor
-2. Copia supabase_init_complete.sql → RUN
-3. Copia supabase_insert_products.sql → RUN
-```
+**Esto crea:** 8 tablas + 3 usuarios + 13 productos + 109 unidades de stock
 
 ### 2. Configurar Variables de Entorno
 
@@ -197,18 +193,17 @@ O vincula GitHub → Vercel (auto-deploy en cada push)
 
 ```
 muse-studio-erp/
-├── app.py                      # Aplicación Flask principal
-├── models.py                   # Modelos SQLAlchemy
-├── database.py                 # Inicialización de BD
+├── app.py                         # Aplicación Flask principal
+├── models.py                      # Modelos SQLAlchemy
+├── database.py                    # Inicialización de BD
+├── utils.py                       # Funciones utilitarias
+├── wsgi.py                        # Entrada para Vercel
 ├── config/
-│   └── icons_colors.py         # Tema y configuración visual
-├── requirements.txt            # Dependencias
-├── .env                        # Variables de entorno
-├── init_db.py                  # Script para inicializar BD local
-├── load_stock.py               # Script para cargar productos
-├── supabase_init_complete.sql  # Script BD Supabase (tablas)
-├── supabase_insert_products.sql# Script BD Supabase (datos)
-└── README.md                   # Este archivo
+│   └── icons_colors.py            # Tema y configuración visual
+├── requirements.txt               # Dependencias Python
+├── .env                           # Variables de entorno
+├── supabase_restore_complete.sql  # Script de restauración BD (IMPORTANTE)
+└── README.md                      # Este archivo
 ```
 
 ---
@@ -227,16 +222,22 @@ muse-studio-erp/
 
 ## 🐛 Troubleshooting
 
-### "No such column: sale.vendor_id"
-- Ejecuta: `python init_db.py` (recrea BD con nueva schema)
+### "Error 500 en /admin/sale, /admin/catalog, etc."
+**Solución:** Restaura el BD en Supabase usando `supabase_restore_complete.sql`
+```
+1. Abre Supabase SQL Editor
+2. Copia TODA la SQL del archivo
+3. RUN
+4. Redeploy en Vercel
+```
 
-### "Database URL inválido"
-- Verifica `.env`: `DATABASE_URL` debe estar correcta
-- Local: `sqlite:///muse_studio.db`
-- Supabase: `postgresql://user:password@...`
+### "Database URL inválido en producción"
+- Verifica Vercel → Settings → Environment Variables
+- `DATABASE_URL` debe ser: `postgresql://user:password@host:5432/database`
 
-### "Puerto 5000 en uso"
+### "Puerto 5000 en uso localmente"
 - Cambia en `.env`: `PORT=5001` (o cualquier puerto libre)
+- Reinicia: `python app.py`
 
 ---
 
@@ -249,6 +250,6 @@ Privado - Derechos reservados Muse Studio
 ## 👨‍💻 Autor
 
 Desarrollado por Anthony Hernández  
-Email: romeroh.0611@gmail.com
+Email: anthonyhernandez@bemol.com.br
 
 **Made with ❤️ para Muse Studio** 🎀
