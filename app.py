@@ -688,16 +688,16 @@ TEMPLATE = """
 
                 <!-- Botones - Stack en mobile, grid en desktop -->
                 <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
-                    <button type="button" onclick="toggleCartModal()" class="btn" style="background: #FFC107; color: black; padding: 48px; font-size: 44px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; min-height: 130px;">
+                    <button type="button" onclick="toggleCartModal()" class="btn" style="background: #FFC107; color: black; padding: 0; font-size: 44px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; min-height: 140px; display: flex; align-items: center; justify-content: center;">
                         Ver Carrito
                     </button>
-                    <button type="button" onclick="toggleDiscountMode()" id="discountToggleBtn" class="btn" style="background: #FF9800; color: white; padding: 48px; font-size: 44px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; min-height: 130px;">
+                    <button type="button" onclick="toggleDiscountMode()" id="discountToggleBtn" class="btn" style="background: #FF9800; color: white; padding: 0; font-size: 44px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; min-height: 140px; display: flex; align-items: center; justify-content: center;">
                         Descuento
                     </button>
                     <form method="POST" id="checkoutForm" style="margin: 0;">
                         <input type="hidden" name="date" value="{{ today }}">
                         <div id="formItems"></div>
-                        <button type="submit" class="btn btn-pink" style="width: 100%; padding: 48px; font-size: 44px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; background: var(--pink); color: white; box-shadow: 0 2px 8px rgba(0,0,0,0.15); transition: all 0.2s; min-height: 130px;">
+                        <button type="submit" class="btn btn-pink" style="width: 100%; padding: 0; font-size: 44px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; background: var(--pink); color: white; box-shadow: 0 2px 8px rgba(0,0,0,0.15); transition: all 0.2s; min-height: 140px; display: flex; align-items: center; justify-content: center;">
                             PROCESAR
                         </button>
                     </form>
@@ -735,13 +735,13 @@ TEMPLATE = """
                     <span id="cartTotalModal" style="color: #4CAF50;">$ 0.00</span>
                 </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
-                        <button type="button" onclick="toggleCartModal()" class="btn" style="background: #FFC107; color: black; padding: 48px; font-size: 44px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; min-height: 130px;">
+                        <button type="button" onclick="toggleCartModal()" class="btn" style="background: #FFC107; color: black; padding: 0; font-size: 44px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; min-height: 140px; display: flex; align-items: center; justify-content: center;">
                             Seguir Comprando
                         </button>
-                        <button type="button" onclick="toggleDiscountMode()" id="discountToggleBtn" class="btn" style="background: #FF9800; color: white; padding: 48px; font-size: 44px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; min-height: 130px;">
+                        <button type="button" onclick="toggleDiscountMode()" id="discountToggleBtn" class="btn" style="background: #FF9800; color: white; padding: 0; font-size: 44px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; min-height: 140px; display: flex; align-items: center; justify-content: center;">
                             Descuento
                         </button>
-                        <button type="button" onclick="clearCart()" class="btn" style="background: #f44336; color: white; padding: 48px; font-size: 44px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; min-height: 130px;">
+                        <button type="button" onclick="clearCart()" class="btn" style="background: #f44336; color: white; padding: 0; font-size: 44px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; min-height: 140px; display: flex; align-items: center; justify-content: center;">
                             Limpiar
                         </button>
                     </div>
