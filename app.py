@@ -2241,7 +2241,10 @@ def edit_product(code):
             db.session.add(Purchase(product_code=code, quantity=quantity_adjustment, unit_cost=product.cost_price, date=date.today()))
 
         db.session.commit()
-        flash(f'✅ Producto {code} actualizado correctamente! Costo: ${product.cost_price:.2f} | Venta: ${product.sale_price:.2f}' + (f' | +Stock: {quantity_adjustment}' if quantity_adjustment > 0 else ''))
+        msg = f'✅ Producto {code} actualizado correctamente! Costo: ${product.cost_price:.2f} | Venta: ${product.sale_price:.2f}'
+        if quantity_adjustment > 0:
+            msg += f' | +Stock: {quantity_adjustment}'
+        flash(msg)
         return redirect(url_for('admin_catalog'))
 
     return render_template_string(TEMPLATE, edit_product=product, theme=Theme)
