@@ -666,9 +666,14 @@ TEMPLATE = """
             <h3 style="margin-bottom: 15px; font-size: 22px;">📦 Catálogo de Productos</h3>
             <input type="text" id="searchInput" placeholder="🔍 Buscar por nombre..." style="padding: 16px; border: 2px solid #D4AF37; border-radius: 8px; width: 100%; margin-bottom: 20px; box-sizing: border-box; font-size: 18px; font-weight: 500;">
 
-            <div id="productsContainer" style="display: flex; flex-direction: column; gap: 18px; max-height: 70vh; overflow-y: auto; padding-right: 8px;">
+            <div id="productsContainer" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 18px; max-height: 70vh; overflow-y: auto; padding-right: 8px;">
                 <!-- Los productos se cargan aquí con JavaScript -->
             </div>
+            <style>
+                @media (max-width: 768px) {
+                    #productsContainer { grid-template-columns: 1fr !important; }
+                }
+            </style>
         </div>
 
         <!-- CARRITO FLOTANTE PARA MOBILE -->
@@ -786,22 +791,22 @@ TEMPLATE = """
                 filtered.forEach(product => {
                     const isInactive = product.status !== 'ativo';
                     const cardHTML = `
-                        <div style="background: white; border-left: 8px solid var(--pink); border-radius: 10px; padding: 36px 28px; cursor: pointer; transition: all 0.3s; display: flex; justify-content: space-between; align-items: center; min-height: 180px; ${isInactive ? 'opacity: 0.5; pointer-events: none;' : 'box-shadow: 0 2px 8px rgba(0,0,0,0.12);'}">
-                            <div style="flex: 1;">
-                                <div style="font-weight: bold; color: #333; margin-bottom: 12px; font-size: 32px;">${product.name}</div>
-                                <div style="font-size: 28px; color: #999; margin-bottom: 14px;">${product.code}</div>
-                                <div style="display: flex; gap: 20px; font-size: 20px;">
-                                    <span style="color: var(--pink); font-weight: bold; font-size: 28px;">$ ${product.avg_price.toFixed(2)}</span>
-                                    <span style="color: #666;">Stock: <strong style="color: ${product.stock > 0 ? '#4CAF50' : '#f44336'}; font-size: 28px;">${product.stock}</strong></span>
+                        <div style="background: white; border-left: 8px solid var(--pink); border-radius: 10px; padding: 28px; cursor: pointer; transition: all 0.3s; display: flex; flex-direction: column; gap: 20px; ${isInactive ? 'opacity: 0.5; pointer-events: none;' : 'box-shadow: 0 2px 8px rgba(0,0,0,0.12);'}">
+                            <div>
+                                <div style="font-weight: bold; color: #333; margin-bottom: 10px; font-size: 26px;">${product.name}</div>
+                                <div style="font-size: 18px; color: #999; margin-bottom: 12px;">${product.code}</div>
+                                <div style="display: flex; gap: 20px; font-size: 18px;">
+                                    <span style="color: var(--pink); font-weight: bold; font-size: 22px;">$ ${product.avg_price.toFixed(2)}</span>
+                                    <span style="color: #666;">Stock: <strong style="color: ${product.stock > 0 ? '#4CAF50' : '#f44336'}; font-size: 22px;">${product.stock}</strong></span>
                                 </div>
                             </div>
                             <div>
                                 ${product.stock > 0 ? `
-                                    <button type="button" onclick="addToCart('${product.code}', '${product.name}', ${product.avg_price}, ${product.stock})" class="btn" style="padding: 28px 36px; font-size: 28px; background: var(--pink); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; white-space: nowrap; min-height: 100px;">
+                                    <button type="button" onclick="addToCart('${product.code}', '${product.name}', ${product.avg_price}, ${product.stock})" class="btn" style="width: 100%; padding: 20px 24px; font-size: 22px; background: var(--pink); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">
                                         Agregar
                                     </button>
                                 ` : `
-                                    <div style="padding: 28px 36px; color: #f44336; font-size: 28px; font-weight: bold; background: #ffebee; border-radius: 8px; text-align: center; min-height: 100px; display: flex; align-items: center;">
+                                    <div style="width: 100%; padding: 20px 24px; color: #f44336; font-size: 22px; font-weight: bold; background: #ffebee; border-radius: 8px; text-align: center;">
                                         Sin Stock
                                     </div>
                                 `}
