@@ -1366,6 +1366,29 @@ TEMPLATE = """
             {% endfor %}
         </div>
 
+    {% elif request.endpoint == 'vendor_sales' %}
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+            <h2>👤 Detalles de Vendedor: {{ vendedor.username }}</h2>
+            <a href="/admin/vendors" class="btn-dark btn" style="font-size: 18px;">← Volver</a>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px;">
+            <div style="background: #fff5f8; border: 2px solid #ffccd5; padding: 24px; border-radius: 12px; text-align: center;">
+                <h3 style="margin: 0; color: #666; font-size: 18px;">👥 Vendedor</h3>
+                <p style="margin: 12px 0 0 0; font-size: 28px; font-weight: bold; color: var(--pink);">{{ vendedor.username }}</p>
+            </div>
+            <div style="background: #e8f5e9; border: 2px solid #c8e6c9; padding: 24px; border-radius: 12px; text-align: center;">
+                <h3 style="margin: 0; color: #666; font-size: 18px;">📊 Total Ventas</h3>
+                <p style="margin: 12px 0 0 0; font-size: 28px; font-weight: bold; color: #4CAF50;">{{ total_sales }}</p>
+            </div>
+            <div style="background: #fff3e0; border: 2px solid #ffe0b2; padding: 24px; border-radius: 12px; text-align: center;">
+                <h3 style="margin: 0; color: #666; font-size: 18px;">💰 Valor Total</h3>
+                <p style="margin: 12px 0 0 0; font-size: 28px; font-weight: bold; color: #FF9800;">{{ total_value | money }}</p>
+            </div>
+        </div>
+
+        <p style="color: #999; text-align: center; margin-top: 40px;">📍 Aquí irán más detalles y reportes del vendedor</p>
+
     {% elif request.endpoint == 'admin_inventory' %}
         <div style="display: flex; justify-content: space-between; align-items: center;">
             <h2>📦 Auditoria de Inventario</h2>
@@ -2173,6 +2196,26 @@ def admin_vendors():
         })
 
     return render_template_string(TEMPLATE, vendedor_data=vendedor_data, theme=Theme)
+
+@app.route('/admin/vendor/<int:vendor_id>/sales')
+def vendor_sales(vendor_id):
+    if session.get('role') != 'admin': return redirect(url_for('login'))
+
+    vendedor = User.query.get(vendor_id)
+    if not vendedor or vendedor.role != 'vendedor':
+        flash('❌ Vendedor no encontrado')
+        return redirect(url_for('admin_vendors'))
+
+    # Obtener todas las ventas del sistema
+    sales = Sale.query.all()
+    total_sales = len(sales)
+    total_value = db.session.query(db.func.sum(Sale.unit_price * Sale.quantity)).scalar() or 0
+
+    return render_template_string(TEMPLATE,
+        vendedor=vendedor,
+        total_sales=total_sales,
+        total_value=total_value,
+        theme=Theme)
 
 # ==================== INVENTARIO / AUDITORIA ====================
 
