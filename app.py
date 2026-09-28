@@ -907,22 +907,22 @@ TEMPLATE = """
                         total += subtotal;
 
                         html += `
-                            <div style="background: white; padding: 22px; margin-bottom: 16px; border-radius: 10px; border-left: 6px solid var(--pink); box-shadow: 0 2px 6px rgba(0,0,0,0.08);">
-                                <div style="font-weight: bold; font-size: 22px; margin-bottom: 10px; color: #333;">${item.name}</div>
-                                <div style="font-size: 16px; color: #999; margin-bottom: 12px;">${item.code}</div>
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 18px;">
-                                    <span style="color: #666;">Precio: <strong style="color: var(--pink); font-size: 20px;">$ ${item.price.toFixed(2)}</strong></span>
-                                    <span style="color: #666;">Qty: <input type="number" value="${item.quantity}" min="1" max="${item.stock}" onchange="updateQuantity('${item.code}', parseInt(this.value))" style="width: 70px; padding: 14px; text-align: center; border: 2px solid #ccc; border-radius: 5px; font-size: 18px; font-weight: bold;"></span>
+                            <div style="background: white; padding: 30px; margin-bottom: 20px; border-radius: 10px; border-left: 6px solid var(--pink); box-shadow: 0 2px 6px rgba(0,0,0,0.08);">
+                                <div style="font-weight: bold; font-size: 26px; margin-bottom: 14px; color: #333;">${item.name}</div>
+                                <div style="font-size: 18px; color: #999; margin-bottom: 16px;">${item.code}</div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; font-size: 20px;">
+                                    <span style="color: #666;">Precio: <strong style="color: var(--pink); font-size: 24px;">$ ${item.price.toFixed(2)}</strong></span>
+                                    <span style="color: #666;">Qty: <input type="number" value="${item.quantity}" min="1" max="${item.stock}" onchange="updateQuantity('${item.code}', parseInt(this.value))" style="width: 90px; padding: 16px; text-align: center; border: 2px solid #ccc; border-radius: 5px; font-size: 20px; font-weight: bold;"></span>
                                 </div>
                                 ${discountMode ? `
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 18px;">
-                                    <label style="color: #FF9800; font-weight: bold; font-size: 18px;">💰 Descuento:</label>
-                                    <input type="number" min="0" max="${item.price}" step="0.01" value="${discount}" onchange="updateDiscount('${item.code}', parseFloat(this.value))" placeholder="0.00" style="width: 110px; padding: 14px; text-align: right; border: 2px solid #FF9800; border-radius: 5px; font-size: 18px; font-weight: bold;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; font-size: 20px;">
+                                    <label style="color: #FF9800; font-weight: bold; font-size: 20px;">💰 Descuento:</label>
+                                    <input type="number" min="0" max="${item.price}" step="0.01" value="${discount}" onchange="updateDiscount('${item.code}', parseFloat(this.value))" placeholder="0.00" style="width: 130px; padding: 16px; text-align: right; border: 2px solid #FF9800; border-radius: 5px; font-size: 20px; font-weight: bold;">
                                 </div>
                                 ` : ''}
-                                <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 12px; border-top: 1px solid #eee;">
-                                    <strong style="color: #4CAF50; font-size: 22px;">$ ${subtotal.toFixed(2)}</strong>
-                                    <button type="button" onclick="removeFromCart('${item.code}')" class="btn" style="padding: 12px 18px; font-size: 16px; background: #f44336; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 16px; border-top: 1px solid #eee;">
+                                    <strong style="color: #4CAF50; font-size: 26px;">$ ${subtotal.toFixed(2)}</strong>
+                                    <button type="button" onclick="removeFromCart('${item.code}')" class="btn" style="padding: 16px 24px; font-size: 18px; background: #f44336; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; min-height: 52px;">
                                         ✕ Quitar
                                     </button>
                                 </div>
