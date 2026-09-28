@@ -2050,6 +2050,11 @@ def admin_sale():
 
     if request.method == 'POST':
         from datetime import datetime
+
+        # Obtener vendor_id del usuario actual
+        current_user = User.query.filter_by(username=session.get('user')).first()
+        vendor_id = current_user.id if current_user else None
+
         invoice_number = generate_invoice_number()
         date_str = request.form.get('date', datetime.now().strftime('%d/%m/%Y'))
         date_obj = datetime.strptime(date_str, '%d/%m/%Y').date()
@@ -2079,8 +2084,8 @@ def admin_sale():
                 })
                 total_amount += subtotal
 
-                # Registrar la venta individual para compatibilidad (con precio después del descuento)
-                db.session.add(Sale(date=date_obj, product_code=code, quantity=quantity, unit_price=unit_price))
+                # Registrar la venta individual con vendor_id
+                db.session.add(Sale(date=date_obj, product_code=code, quantity=quantity, unit_price=unit_price, vendor_id=vendor_id))
 
             i += 1
 
@@ -2088,8 +2093,8 @@ def admin_sale():
             flash('❌ El carrito está vacío. Agregue productos antes de vender.')
             return redirect(url_for('admin_sale'))
 
-        # Crear invoice
-        invoice = Invoice(invoice_number=invoice_number, date=date_obj, total_amount=total_amount)
+        # Crear invoice con vendor_id
+        invoice = Invoice(invoice_number=invoice_number, date=date_obj, total_amount=total_amount, vendor_id=vendor_id)
         db.session.add(invoice)
         db.session.flush()
 
