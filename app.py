@@ -172,7 +172,7 @@ TEMPLATE = """
             <button type="submit" class="btn">Entrar</button>
         </form>
 
-    {% elif session.get('role') in ['dev', 'admin'] %}
+    {% elif session.get('role') == 'dev' or (session.get('role') == 'admin' and request.endpoint == 'admin_users') %}
         {% if session.get('role') == 'dev' %}
         <h2>Panel de Desarrollador - Gestión de Usuarios</h2>
         {% else %}
@@ -282,6 +282,7 @@ TEMPLATE = """
                 {% if session['role'] == 'admin' %}
                 <a href="/admin/inventory" class="btn" style="background: #FF9800; color: white;">📦 Inventario</a>
                 <a href="/admin/vendors" class="btn" style="background: #9C27B0; color: white;">👥 Vendedores</a>
+                <a href="/admin/users" class="btn" style="background: #607D8B; color: white;">👤 Usuarios</a>
                 {% endif %}
             </div>
         </div>
@@ -1595,12 +1596,13 @@ def create_user():
     # Admin solo puede crear vendedores
     if session.get('role') == 'admin' and role != 'vendedor':
         flash('❌ Admin solo puede crear Vendedores!')
-        return redirect(url_for('admin_dashboard'))
+        return redirect(url_for('admin_users'))
 
     if User.query.filter_by(username=new_username).first():
         flash('❌ El nombre de usuario ya existe.')
-        return redirect(url_for('dev_panel' if session.get('role') == 'dev' else 'admin_dashboard'))
-    
+        redirect_to = 'dev_panel' if session.get('role') == 'dev' else 'admin_users'
+        return redirect(url_for(redirect_to))
+
     hashed_pw = generate_password_hash(new_password, method='pbkdf2:sha256')
     db.session.add(User(username=new_username, password=hashed_pw, role=role))
     db.session.commit()
@@ -1610,13 +1612,14 @@ def create_user():
     else:
         flash(f'✅ Usuario "{new_username}" creado con éxito.')
 
-    return redirect(url_for('dev_panel' if session.get('role') == 'dev' else 'admin_dashboard'))
+    redirect_to = 'dev_panel' if session.get('role') == 'dev' else 'admin_users'
+    return redirect(url_for(redirect_to))
 
 @app.route('/dev/reset_password/<int:user_id>')
 def reset_password(user_id):
     if session.get('role') not in ['dev', 'admin']: return redirect(url_for('login'))
     user = User.query.get(user_id)
-    redirect_url = 'dev_panel' if session.get('role') == 'dev' else 'admin_dashboard'
+    redirect_url = 'dev_panel' if session.get('role') == 'dev' else 'admin_users'
     if not user: return redirect(url_for(redirect_url))
 
     new_password = f"{user.username}123"
@@ -1630,7 +1633,7 @@ def reset_password(user_id):
 def delete_user(user_id):
     if session.get('role') not in ['dev', 'admin']: return redirect(url_for('login'))
     user = User.query.get(user_id)
-    redirect_url = 'dev_panel' if session.get('role') == 'dev' else 'admin_dashboard'
+    redirect_url = 'dev_panel' if session.get('role') == 'dev' else 'admin_users'
     if not user: return redirect(url_for(redirect_url))
 
     if session.get('role') == 'admin' and user.role != 'vendedor':
@@ -1642,6 +1645,11 @@ def delete_user(user_id):
     db.session.commit()
     flash(f'🗑️ Usuario "{username}" eliminado exitosamente')
     return redirect(url_for(redirect_url))
+
+@app.route('/admin/users')
+def admin_users():
+    if session.get('role') != 'admin': return redirect(url_for('login'))
+    return render_template_string(TEMPLATE, users=User.query.all(), theme=Theme)
 
 @app.route('/admin')
 def admin_dashboard():
