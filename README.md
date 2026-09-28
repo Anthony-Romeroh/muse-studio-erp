@@ -249,6 +249,6 @@ Privado - Derechos reservados Muse Studio
 ## 👨‍💻 Autor
 
 Desarrollado por Anthony Hernández  
-Email: anthonyhernandez@bemol.com.br
+Email: romeroh.0611@gmail.com
 
 **Made with ❤️ para Muse Studio** 🎀
