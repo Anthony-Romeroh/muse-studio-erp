@@ -503,37 +503,91 @@ TEMPLATE = """
             <h2>{{ theme.ACTIONS.editar }} Editar Producto</h2>
             <a href="/admin/catalog" class="btn-dark btn" style="font-size: 18px;">← Volver al Catálogo</a>
         </div>
-        <form method="POST" style="max-width: 600px;">
-            <label>{{ theme.INFORMATION.codigo }} SKU: <strong>{{ edit_product.code }}</strong></label>
+        <form method="POST" style="max-width: 700px;">
+            <label style="font-weight: bold; color: #333;">{{ theme.INFORMATION.codigo }} SKU: <span style="color: var(--pink);">{{ edit_product.code }}</span></label>
 
-            <label style="margin-top: 15px;">{{ theme.INFORMATION.nombre }} Nombre del Producto:</label>
-            <input type="text" name="name" value="{{ edit_product.name }}" required style="padding: 14px; border: 1px solid #ccc; border-radius: 5px; width: 100%; box-sizing: border-box;">
+            <label style="margin-top: 20px;">{{ theme.INFORMATION.nombre }} Nombre del Producto:</label>
+            <input type="text" name="name" value="{{ edit_product.name }}" required style="padding: 14px; border: 2px solid #ddd; border-radius: 5px; width: 100%; box-sizing: border-box; font-size: 16px;">
 
-            <label style="margin-top: 15px;">{{ theme.INFORMATION.precio }} Categoría:</label>
-            <input type="text" name="category" value="{{ edit_product.category }}" required style="padding: 14px; border: 1px solid #ccc; border-radius: 5px; width: 100%; box-sizing: border-box;">
+            <label style="margin-top: 20px;">{{ theme.INFORMATION.precio }} Categoría:</label>
+            <input type="text" name="category" value="{{ edit_product.category }}" required style="padding: 14px; border: 2px solid #ddd; border-radius: 5px; width: 100%; box-sizing: border-box; font-size: 16px;">
 
-            <div style="display: flex; gap: 16px; margin-top: 20px;">
-                <button type="submit" class="btn btn-pink" style="flex: 1;">{{ theme.ACTIONS.guardar }} Guardar Cambios</button>
-                <a href="/admin/catalog" class="btn" style="background: #ccc; flex: 1; text-align: center; padding: 14px;">{{ theme.ACTIONS.cancelar }} Cancelar</a>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
+                <div>
+                    <label style="margin-top: 0;">💰 Precio de Costo ($):</label>
+                    <input type="number" step="0.01" name="cost_price" value="{{ edit_product.cost_price }}" required style="padding: 14px; border: 2px solid #FF6B9D; border-radius: 5px; width: 100%; box-sizing: border-box; font-size: 16px;">
+                </div>
+                <div>
+                    <label style="margin-top: 0;">🛍️ Precio de Venta ($):</label>
+                    <input type="number" step="0.01" name="sale_price" value="{{ edit_product.sale_price }}" required style="padding: 14px; border: 2px solid #4CAF50; border-radius: 5px; width: 100%; box-sizing: border-box; font-size: 16px;">
+                </div>
             </div>
-            <p style="color: #666; margin-top: 20px; font-size: 16px;">✓ Todos los textos se convertirán a MAYÚSCULA automáticamente</p>
+
+            <div style="background: #f0f8ff; padding: 16px; border-radius: 8px; margin-top: 20px; border-left: 4px solid #2196F3;">
+                <div style="font-size: 14px; color: #666; margin-bottom: 8px;">📊 Margen de Ganancia:</div>
+                <div id="marginResult" style="font-size: 24px; font-weight: bold; color: #4CAF50;">-</div>
+                <div id="marginPercent" style="font-size: 14px; color: #999; margin-top: 4px;">-</div>
+            </div>
+
+            <div style="display: flex; gap: 16px; margin-top: 28px;">
+                <button type="submit" class="btn btn-pink" style="flex: 1; padding: 16px; font-size: 18px;">✅ Guardar Cambios</button>
+                <a href="/admin/catalog" class="btn" style="background: #ccc; flex: 1; text-align: center; padding: 16px; font-size: 18px;">❌ Cancelar</a>
+            </div>
+            <p style="color: #666; margin-top: 20px; font-size: 14px;">✓ Todos los textos se convertirán a MAYÚSCULA automáticamente</p>
         </form>
 
+        <script>
+            const costInput = document.querySelector('input[name="cost_price"]');
+            const saleInput = document.querySelector('input[name="sale_price"]');
+            const marginResult = document.getElementById('marginResult');
+            const marginPercent = document.getElementById('marginPercent');
+
+            function updateMargin() {
+                const cost = parseFloat(costInput.value) || 0;
+                const sale = parseFloat(saleInput.value) || 0;
+                const margin = sale - cost;
+                const percent = sale > 0 ? ((margin / sale) * 100).toFixed(1) : 0;
+
+                marginResult.textContent = '$ ' + margin.toFixed(2);
+                marginPercent.textContent = percent + '% de ganancia';
+                marginResult.style.color = margin >= 0 ? '#4CAF50' : '#f44336';
+            }
+
+            costInput.addEventListener('input', updateMargin);
+            saleInput.addEventListener('input', updateMargin);
+            updateMargin();
+        </script>
+
     {% elif request.endpoint == 'admin_new_product' %}
-        <h2>{{ theme.ACTIONS.guardar }} Catálogo de Productos</h2>
-        <p style="color: #666; font-size: 18px;">{{ theme.INFORMATION.codigo }} SKU se genera automáticamente | {{ theme.INFORMATION.nombre }} Nombre | {{ theme.INFORMATION.precio }} Categoría</p>
-        <form method="POST" style="max-width: 600px;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h2>{{ theme.ACTIONS.guardar }} ➕ Nuevo Producto</h2>
+            <a href="/admin" class="btn-dark btn" style="font-size: 18px;">← Volver</a>
+        </div>
+        <p style="color: #666; font-size: 16px; margin-bottom: 20px;">{{ theme.INFORMATION.codigo }} SKU se genera automáticamente</p>
+
+        <form method="POST" style="max-width: 700px;">
             <label>{{ theme.INFORMATION.nombre }} Nombre del Producto:</label>
-            <input type="text" name="name" placeholder="Ej: Labial Mate Velvet" required style="padding: 14px; border: 1px solid #ccc; border-radius: 5px; width: 100%; box-sizing: border-box;">
+            <input type="text" name="name" placeholder="Ej: Labial Mate Velvet" required style="padding: 14px; border: 2px solid #ddd; border-radius: 5px; width: 100%; box-sizing: border-box; font-size: 16px;">
 
-            <label style="margin-top: 15px;">{{ theme.INFORMATION.precio }} Categoría:</label>
-            <input type="text" name="category" placeholder="Ej: Makeup / Beauty / Accessories" required style="padding: 14px; border: 1px solid #ccc; border-radius: 5px; width: 100%; box-sizing: border-box;">
+            <label style="margin-top: 20px;">{{ theme.INFORMATION.precio }} Categoría:</label>
+            <input type="text" name="category" placeholder="Ej: Makeup / Beauty / Accessories" required style="padding: 14px; border: 2px solid #ddd; border-radius: 5px; width: 100%; box-sizing: border-box; font-size: 16px;">
 
-            <div style="display: flex; gap: 16px; margin-top: 20px;">
-                <button type="submit" class="btn btn-pink" style="flex: 1;">{{ theme.ACTIONS.guardar }} Guardar Producto</button>
-                <a href="/admin" class="btn" style="background: #ccc; flex: 1; text-align: center; padding: 14px;">{{ theme.ACTIONS.cancelar }} Cancelar</a>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
+                <div>
+                    <label style="margin-top: 0;">💰 Precio de Costo ($):</label>
+                    <input type="number" step="0.01" name="cost_price" placeholder="0.00" required style="padding: 14px; border: 2px solid #FF6B9D; border-radius: 5px; width: 100%; box-sizing: border-box; font-size: 16px;">
+                </div>
+                <div>
+                    <label style="margin-top: 0;">🛍️ Precio de Venta ($):</label>
+                    <input type="number" step="0.01" name="sale_price" placeholder="0.00" required style="padding: 14px; border: 2px solid #4CAF50; border-radius: 5px; width: 100%; box-sizing: border-box; font-size: 16px;">
+                </div>
             </div>
-            <p style="color: #666; margin-top: 20px; font-size: 16px;">✓ Todos los textos se convertirán a MAYÚSCULA automáticamente</p>
+
+            <div style="display: flex; gap: 16px; margin-top: 28px;">
+                <button type="submit" class="btn btn-pink" style="flex: 1; padding: 16px; font-size: 18px;">✅ Crear Producto</button>
+                <a href="/admin" class="btn" style="background: #ccc; flex: 1; text-align: center; padding: 16px; font-size: 18px;">❌ Cancelar</a>
+            </div>
+            <p style="color: #666; margin-top: 20px; font-size: 14px;">✓ Todos los textos se convertirán a MAYÚSCULA automáticamente</p>
         </form>
 
     {% elif request.endpoint == 'admin_purchase' %}
@@ -2001,10 +2055,13 @@ def admin_new_product():
         code = generate_sku()
         name = request.form['name'].upper()
         category = request.form['category'].upper()
+        cost_price = float(request.form['cost_price'])
+        sale_price = float(request.form['sale_price'])
 
-        db.session.add(Product(code=code, name=name, category=category, cost_price=0, sale_price=0, min_stock=5, status='ativo'))
+        db.session.add(Product(code=code, name=name, category=category, cost_price=cost_price, sale_price=sale_price, min_stock=5, status='ativo'))
         db.session.commit()
-        flash(f'¡Producto registrado con éxito! SKU: <b>{code}</b>')
+        margin = sale_price - cost_price
+        flash(f'✅ Producto registrado con éxito! SKU: <b>{code}</b> | Margen: ${margin:.2f}')
         return redirect(url_for('admin_catalog'))
     return render_template_string(TEMPLATE, theme=Theme)
 
@@ -2162,8 +2219,10 @@ def edit_product(code):
     if request.method == 'POST':
         product.name = request.form['name'].upper()
         product.category = request.form['category'].upper()
+        product.cost_price = float(request.form['cost_price'])
+        product.sale_price = float(request.form['sale_price'])
         db.session.commit()
-        flash(f'¡Producto {code} actualizado correctamente!')
+        flash(f'✅ Producto {code} actualizado correctamente! Costo: ${product.cost_price:.2f} | Venta: ${product.sale_price:.2f}')
         return redirect(url_for('admin_catalog'))
 
     return render_template_string(TEMPLATE, edit_product=product, theme=Theme)
