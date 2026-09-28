@@ -50,7 +50,8 @@ CREATE TABLE invoice (
     id SERIAL PRIMARY KEY,
     invoice_number VARCHAR(50) UNIQUE NOT NULL,
     date DATE NOT NULL,
-    total_amount FLOAT DEFAULT 0 NOT NULL
+    total_amount FLOAT DEFAULT 0 NOT NULL,
+    vendor_id INTEGER REFERENCES "user"(id)
 );
 
 -- Invoice Items Table
@@ -70,7 +71,8 @@ CREATE TABLE sale (
     date DATE NOT NULL,
     product_code VARCHAR(50) NOT NULL,
     quantity INTEGER NOT NULL,
-    unit_price FLOAT NOT NULL
+    unit_price FLOAT NOT NULL,
+    vendor_id INTEGER REFERENCES "user"(id)
 );
 
 -- Inventory Count Table

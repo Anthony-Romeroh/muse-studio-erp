@@ -1984,9 +1984,9 @@ def price_guide():
     products = Product.query.all()
     product_data = []
 
-    today = datetime.strptime('2026-09-27', '%Y-%m-%d')  # Data atual
-    date_15_days_ago = (today - timedelta(days=15)).strftime('%d/%m/%Y')
-    date_30_days_ago = (today - timedelta(days=30)).strftime('%d/%m/%Y')
+    today = datetime.strptime('2026-09-28', '%Y-%m-%d').date()
+    date_15_days_ago = today - timedelta(days=15)
+    date_30_days_ago = today - timedelta(days=30)
 
     for p in products:
         tp = db.session.query(db.func.sum(Purchase.quantity)).filter_by(product_code=p.code).scalar() or 0
