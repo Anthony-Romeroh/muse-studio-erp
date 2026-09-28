@@ -662,7 +662,7 @@ TEMPLATE = """
             <a href="/admin" class="btn-dark btn" style="font-size: 18px;">← Volver al Dashboard</a>
         </div>
 
-        <div style="display: block; margin-bottom: 220px;">
+        <div style="display: block; margin-bottom: 520px;">
             <h3 style="margin-bottom: 15px; font-size: 22px;">📦 Catálogo de Productos</h3>
             <input type="text" id="searchInput" placeholder="🔍 Buscar por nombre..." style="padding: 16px; border: 2px solid #D4AF37; border-radius: 8px; width: 100%; margin-bottom: 20px; box-sizing: border-box; font-size: 18px; font-weight: 500;">
 
@@ -672,32 +672,32 @@ TEMPLATE = """
         </div>
 
         <!-- CARRITO FLOTANTE PARA MOBILE -->
-        <div style="position: fixed; bottom: 0; left: 0; right: 0; background: linear-gradient(135deg, #fff5f8 0%, #ffffff 100%); border-top: 4px solid var(--pink); box-shadow: 0 -5px 20px rgba(0,0,0,0.2); z-index: 1000;">
-            <div style="padding: 15px; max-width: 1000px; margin: 0 auto;">
+        <div style="position: fixed; bottom: 0; left: 0; right: 0; background: #f8f8f8; border-top: 3px solid #D4AF37; box-shadow: 0 -4px 10px rgba(0,0,0,0.1); z-index: 1000;">
+            <div style="padding: 30px; max-width: 1000px; margin: 0 auto;">
                 <!-- Info del Carrito -->
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px;">
                     <div>
-                        <h4 style="margin: 0; color: var(--pink); font-size: 18px; font-weight: bold;">🛒 Carrito</h4>
-                        <small style="color: #666; font-size: 18px;">Items: <span id="cartCount" style="font-weight: bold; color: var(--pink); font-size: 20px;">0</span></small>
+                        <h4 style="margin: 0; color: var(--pink); font-size: 28px; font-weight: bold;">🛒 Carrito</h4>
+                        <small style="color: #666; font-size: 22px;">Items: <span id="cartCount" style="font-weight: bold; color: var(--pink); font-size: 26px;">0</span></small>
                     </div>
                     <div style="text-align: right;">
-                        <div style="font-size: 16px; color: #999; margin-bottom: 8px;">TOTAL</div>
-                        <div id="cartTotal" style="font-size: 28px; font-weight: bold; color: #4CAF50;">$ 0.00</div>
+                        <div style="font-size: 20px; color: #999; margin-bottom: 10px; font-weight: bold;">TOTAL</div>
+                        <div id="cartTotal" style="font-size: 40px; font-weight: bold; color: #4CAF50;">$ 0.00</div>
                     </div>
                 </div>
 
                 <!-- Botones - Stack en mobile, grid en desktop -->
-                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 12px;">
-                    <button type="button" onclick="toggleCartModal()" class="btn" style="background: #FFC107; color: black; padding: 14px; font-size: 20px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
+                    <button type="button" onclick="toggleCartModal()" class="btn" style="background: #FFC107; color: black; padding: 48px; font-size: 44px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; min-height: 130px;">
                         📋 Ver Carrito
                     </button>
-                    <button type="button" onclick="toggleDiscountMode()" id="discountToggleBtn" class="btn" style="background: #FF9800; color: white; padding: 14px; font-size: 20px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s;">
+                    <button type="button" onclick="toggleDiscountMode()" id="discountToggleBtn" class="btn" style="background: #FF9800; color: white; padding: 48px; font-size: 44px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; min-height: 130px;">
                         💰 Descuento
                     </button>
                     <form method="POST" id="checkoutForm" style="margin: 0;">
                         <input type="hidden" name="date" value="{{ today }}">
                         <div id="formItems"></div>
-                        <button type="submit" class="btn btn-pink" style="width: 100%; padding: 14px; font-size: 16px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; background: var(--pink); color: white; box-shadow: 0 2px 8px rgba(0,0,0,0.15); transition: all 0.2s;">
+                        <button type="submit" class="btn btn-pink" style="width: 100%; padding: 48px; font-size: 44px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; background: var(--pink); color: white; box-shadow: 0 2px 8px rgba(0,0,0,0.15); transition: all 0.2s; min-height: 130px;">
                             ✅ PROCESAR
                         </button>
                     </form>
