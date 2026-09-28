@@ -172,7 +172,7 @@ TEMPLATE = """
             <button type="submit" class="btn">Entrar</button>
         </form>
 
-    {% elif session.get('role') == 'dev' %}
+    {% elif session.get('role') in ['dev', 'admin'] %}
         {% if session.get('role') == 'dev' %}
         <h2>Panel de Desarrollador - Gestión de Usuarios</h2>
         {% else %}
@@ -234,7 +234,7 @@ TEMPLATE = """
                     </td>
                     <td>
                         <a href="/dev/reset_password/{{ u.id }}" class="btn btn-dark" style="padding: 12px 18px; font-size: 16px; text-decoration: none; margin: 4px;">🔑 Reset Pass</a>
-                        {% if session.get('role') == 'dev' and u.role != 'dev' %}
+                        {% if (session.get('role') == 'dev' and u.role != 'dev') or (session.get('role') == 'admin' and u.role == 'vendedor') %}
                         <a href="/dev/delete_user/{{ u.id }}" class="btn" style="background: #f44336; color: white; padding: 12px 18px; font-size: 16px; text-decoration: none; margin: 4px;" onclick="return confirm('¿Eliminar usuario?');">🗑️ Eliminar</a>
                         {% endif %}
                     </td>
@@ -1624,6 +1624,23 @@ def reset_password(user_id):
     user.password = hashed_pw
     db.session.commit()
     flash(f'🔑 Contraseña de "{user.username}" reseteada a: <b>{new_password}</b>')
+    return redirect(url_for(redirect_url))
+
+@app.route('/dev/delete_user/<int:user_id>')
+def delete_user(user_id):
+    if session.get('role') not in ['dev', 'admin']: return redirect(url_for('login'))
+    user = User.query.get(user_id)
+    redirect_url = 'dev_panel' if session.get('role') == 'dev' else 'admin_dashboard'
+    if not user: return redirect(url_for(redirect_url))
+
+    if session.get('role') == 'admin' and user.role != 'vendedor':
+        flash('❌ Admin solo puede eliminar Vendedores!')
+        return redirect(url_for(redirect_url))
+
+    username = user.username
+    db.session.delete(user)
+    db.session.commit()
+    flash(f'🗑️ Usuario "{username}" eliminado exitosamente')
     return redirect(url_for(redirect_url))
 
 @app.route('/admin')
