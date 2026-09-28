@@ -512,7 +512,7 @@ TEMPLATE = """
             <label style="margin-top: 20px;">{{ theme.INFORMATION.precio }} Categoría:</label>
             <input type="text" name="category" value="{{ edit_product.category }}" required style="padding: 14px; border: 2px solid #ddd; border-radius: 5px; width: 100%; box-sizing: border-box; font-size: 16px;">
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-top: 20px;">
                 <div>
                     <label style="margin-top: 0;">💰 Precio de Costo ($):</label>
                     <input type="number" step="0.01" name="cost_price" value="{{ edit_product.cost_price }}" required style="padding: 14px; border: 2px solid #FF6B9D; border-radius: 5px; width: 100%; box-sizing: border-box; font-size: 16px;">
@@ -520,6 +520,10 @@ TEMPLATE = """
                 <div>
                     <label style="margin-top: 0;">🛍️ Precio de Venta ($):</label>
                     <input type="number" step="0.01" name="sale_price" value="{{ edit_product.sale_price }}" required style="padding: 14px; border: 2px solid #4CAF50; border-radius: 5px; width: 100%; box-sizing: border-box; font-size: 16px;">
+                </div>
+                <div>
+                    <label style="margin-top: 0;">📦 Cantidad/Stock:</label>
+                    <input type="number" name="quantity_adjustment" min="0" placeholder="0" style="padding: 14px; border: 2px solid #2196F3; border-radius: 5px; width: 100%; box-sizing: border-box; font-size: 16px;">
                 </div>
             </div>
 
@@ -572,7 +576,7 @@ TEMPLATE = """
             <label style="margin-top: 20px;">{{ theme.INFORMATION.precio }} Categoría:</label>
             <input type="text" name="category" placeholder="Ej: Makeup / Beauty / Accessories" required style="padding: 14px; border: 2px solid #ddd; border-radius: 5px; width: 100%; box-sizing: border-box; font-size: 16px;">
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-top: 20px;">
                 <div>
                     <label style="margin-top: 0;">💰 Precio de Costo ($):</label>
                     <input type="number" step="0.01" name="cost_price" placeholder="0.00" required style="padding: 14px; border: 2px solid #FF6B9D; border-radius: 5px; width: 100%; box-sizing: border-box; font-size: 16px;">
@@ -580,6 +584,10 @@ TEMPLATE = """
                 <div>
                     <label style="margin-top: 0;">🛍️ Precio de Venta ($):</label>
                     <input type="number" step="0.01" name="sale_price" placeholder="0.00" required style="padding: 14px; border: 2px solid #4CAF50; border-radius: 5px; width: 100%; box-sizing: border-box; font-size: 16px;">
+                </div>
+                <div>
+                    <label style="margin-top: 0;">📦 Cantidad Inicial:</label>
+                    <input type="number" name="initial_quantity" min="0" placeholder="0" style="padding: 14px; border: 2px solid #2196F3; border-radius: 5px; width: 100%; box-sizing: border-box; font-size: 16px;">
                 </div>
             </div>
 
@@ -896,7 +904,7 @@ TEMPLATE = """
                 if (item) {
                     if (newQty <= 0) {
                         removeFromCart(code);
-                    } else if (newQty <= item.stock) {
+                    } else {
                         item.quantity = newQty;
                         updateCart();
                     }
@@ -2057,11 +2065,17 @@ def admin_new_product():
         category = request.form['category'].upper()
         cost_price = float(request.form['cost_price'])
         sale_price = float(request.form['sale_price'])
+        initial_quantity = int(request.form.get('initial_quantity', 0) or 0)
 
         db.session.add(Product(code=code, name=name, category=category, cost_price=cost_price, sale_price=sale_price, min_stock=5, status='ativo'))
         db.session.commit()
+
+        if initial_quantity > 0:
+            db.session.add(Purchase(product_code=code, quantity=initial_quantity, unit_cost=cost_price, date=date.today()))
+            db.session.commit()
+
         margin = sale_price - cost_price
-        flash(f'✅ Producto registrado con éxito! SKU: <b>{code}</b> | Margen: ${margin:.2f}')
+        flash(f'✅ Producto registrado con éxito! SKU: <b>{code}</b> | Margen: ${margin:.2f} | Stock: {initial_quantity}')
         return redirect(url_for('admin_catalog'))
     return render_template_string(TEMPLATE, theme=Theme)
 
@@ -2221,8 +2235,13 @@ def edit_product(code):
         product.category = request.form['category'].upper()
         product.cost_price = float(request.form['cost_price'])
         product.sale_price = float(request.form['sale_price'])
+        quantity_adjustment = int(request.form.get('quantity_adjustment', 0) or 0)
+
+        if quantity_adjustment > 0:
+            db.session.add(Purchase(product_code=code, quantity=quantity_adjustment, unit_cost=product.cost_price, date=date.today()))
+
         db.session.commit()
-        flash(f'✅ Producto {code} actualizado correctamente! Costo: ${product.cost_price:.2f} | Venta: ${product.sale_price:.2f}')
+        flash(f'✅ Producto {code} actualizado correctamente! Costo: ${product.cost_price:.2f} | Venta: ${product.sale_price:.2f}' + (f' | +Stock: {quantity_adjustment}' if quantity_adjustment > 0 else ''))
         return redirect(url_for('admin_catalog'))
 
     return render_template_string(TEMPLATE, edit_product=product, theme=Theme)
