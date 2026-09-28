@@ -729,19 +729,19 @@ TEMPLATE = """
             </div>
 
             <!-- Footer Total y Botones -->
-            <div style="background: #f8f8f8; padding: 25px; border-top: 3px solid #D4AF37; flex-shrink: 0; box-shadow: 0 -4px 10px rgba(0,0,0,0.1);">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 25px; font-size: 32px; font-weight: bold; padding: 15px 0; border-bottom: 2px solid #DDD;">
+            <div style="background: #f8f8f8; padding: 30px; border-top: 3px solid #D4AF37; flex-shrink: 0; box-shadow: 0 -4px 10px rgba(0,0,0,0.1);">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 28px; font-size: 36px; font-weight: bold; padding: 18px 0; border-bottom: 2px solid #DDD;">
                     <span style="color: #333;">TOTAL:</span>
                     <span id="cartTotalModal" style="color: #4CAF50;">$ 0.00</span>
                 </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
-                        <button type="button" onclick="toggleCartModal()" class="btn" style="background: #FFC107; color: black; padding: 22px; font-size: 20px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; min-height: 60px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                        <button type="button" onclick="toggleCartModal()" class="btn" style="background: #FFC107; color: black; padding: 24px; font-size: 22px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; min-height: 65px;">
                             ← Seguir Comprando
                         </button>
-                        <button type="button" onclick="toggleDiscountMode()" id="discountToggleBtn" class="btn" style="background: #FF9800; color: white; padding: 22px; font-size: 20px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; min-height: 60px;">
+                        <button type="button" onclick="toggleDiscountMode()" id="discountToggleBtn" class="btn" style="background: #FF9800; color: white; padding: 24px; font-size: 22px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; min-height: 65px;">
                             💰 Descuento
                         </button>
-                        <button type="button" onclick="clearCart()" class="btn" style="background: #f44336; color: white; padding: 22px; font-size: 20px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; min-height: 60px;">
+                        <button type="button" onclick="clearCart()" class="btn" style="background: #f44336; color: white; padding: 24px; font-size: 22px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; min-height: 65px;">
                             🗑️ Limpiar
                         </button>
                     </div>
@@ -907,22 +907,22 @@ TEMPLATE = """
                         total += subtotal;
 
                         html += `
-                            <div style="background: white; padding: 60px; margin-bottom: 40px; border-radius: 10px; border-left: 12px solid var(--pink); box-shadow: 0 2px 6px rgba(0,0,0,0.08);">
-                                <div style="font-weight: bold; font-size: 64px; margin-bottom: 28px; color: #333;">${item.name}</div>
-                                <div style="font-size: 36px; color: #999; margin-bottom: 32px;">${item.code}</div>
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; font-size: 44px;">
-                                    <span style="color: #666;">Precio: <strong style="color: var(--pink); font-size: 56px;">$ ${item.price.toFixed(2)}</strong></span>
-                                    <span style="color: #666;">Qty: <input type="number" value="${item.quantity}" min="1" max="${item.stock}" onchange="updateQuantity('${item.code}', parseInt(this.value))" style="width: 140px; padding: 20px; text-align: center; border: 3px solid #ccc; border-radius: 5px; font-size: 48px; font-weight: bold;"></span>
+                            <div style="background: white; padding: 51px; margin-bottom: 34px; border-radius: 10px; border-left: 10px solid var(--pink); box-shadow: 0 2px 6px rgba(0,0,0,0.08);">
+                                <div style="font-weight: bold; font-size: 54px; margin-bottom: 24px; color: #333;">${item.name}</div>
+                                <div style="font-size: 31px; color: #999; margin-bottom: 27px;">${item.code}</div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 27px; font-size: 37px;">
+                                    <span style="color: #666;">Precio: <strong style="color: var(--pink); font-size: 48px;">$ ${item.price.toFixed(2)}</strong></span>
+                                    <span style="color: #666;">Qty: <input type="number" value="${item.quantity}" min="1" max="${item.stock}" onchange="updateQuantity('${item.code}', parseInt(this.value))" style="width: 119px; padding: 17px; text-align: center; border: 3px solid #ccc; border-radius: 5px; font-size: 41px; font-weight: bold;"></span>
                                 </div>
                                 ${discountMode ? `
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; font-size: 40px;">
-                                    <label style="color: #FF9800; font-weight: bold; font-size: 40px;">💰 Descuento:</label>
-                                    <input type="number" min="0" max="${item.price}" step="0.01" value="${discount}" onchange="updateDiscount('${item.code}', parseFloat(this.value))" placeholder="0.00" style="width: 180px; padding: 20px; text-align: right; border: 3px solid #FF9800; border-radius: 5px; font-size: 40px; font-weight: bold;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 27px; font-size: 34px;">
+                                    <label style="color: #FF9800; font-weight: bold; font-size: 34px;">💰 Descuento:</label>
+                                    <input type="number" min="0" max="${item.price}" step="0.01" value="${discount}" onchange="updateDiscount('${item.code}', parseFloat(this.value))" placeholder="0.00" style="width: 153px; padding: 17px; text-align: right; border: 3px solid #FF9800; border-radius: 5px; font-size: 34px; font-weight: bold;">
                                 </div>
                                 ` : ''}
-                                <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 32px; border-top: 2px solid #eee;">
-                                    <strong style="color: #4CAF50; font-size: 60px;">$ ${subtotal.toFixed(2)}</strong>
-                                    <button type="button" onclick="removeFromCart('${item.code}')" class="btn" style="padding: 24px 40px; font-size: 36px; background: #f44336; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; min-height: 80px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 27px; border-top: 2px solid #eee;">
+                                    <strong style="color: #4CAF50; font-size: 51px;">$ ${subtotal.toFixed(2)}</strong>
+                                    <button type="button" onclick="removeFromCart('${item.code}')" class="btn" style="padding: 20px 34px; font-size: 31px; background: #f44336; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; min-height: 68px;">
                                         ✕ Quitar
                                     </button>
                                 </div>
