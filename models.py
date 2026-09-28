@@ -29,6 +29,7 @@ class Invoice(db.Model):
     invoice_number = db.Column(db.String(50), unique=True, nullable=False)
     date = db.Column(db.Date, nullable=False)
     total_amount = db.Column(db.Float, default=0, nullable=False)
+    vendor_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
     items = db.relationship('InvoiceItem', cascade='all, delete-orphan')
 
 class InvoiceItem(db.Model):
@@ -46,6 +47,7 @@ class Sale(db.Model):
     product_code = db.Column(db.String(50), nullable=False)
     quantity = db.Column(db.Integer, nullable=False)
     unit_price = db.Column(db.Float, nullable=False)
+    vendor_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
 
 class InventoryCount(db.Model):
     id = db.Column(db.Integer, primary_key=True)
