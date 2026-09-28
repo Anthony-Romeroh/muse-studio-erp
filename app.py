@@ -74,9 +74,9 @@ TEMPLATE = """
         h2 { font-size: var(--h2-font); }
         h3 { font-size: var(--h3-font); }
         label { font-size: clamp(0.875rem, 2.5vw, 1.125rem); font-weight: 600; display: block; margin-bottom: 0.5rem; }
-        .header { background: var(--bg-dark); color: var(--gold); padding: clamp(1rem, 5vw, 1.875rem) 1rem; text-align: center; border-bottom: 3px solid var(--pink); }
-        .header h1 { margin: 0; font-size: clamp(1.5rem, 6vw, 1.75rem); }
-        .header p { margin: 0.5rem 0 0 0; color: var(--pink); font-size: clamp(1rem, 3vw, 1.25rem); }
+        .header { background: var(--bg-dark); color: var(--gold); padding: clamp(2rem, 8vw, 3rem) 1.5rem; text-align: center; border-bottom: 4px solid var(--pink); }
+        .header h1 { margin: 0; font-size: clamp(2rem, 8vw, 2.5rem); }
+        .header p { margin: 1rem 0 0 0; color: var(--pink); font-size: clamp(1.25rem, 4vw, 1.75rem); }
         .container { max-width: 1000px; margin: clamp(0.625rem, 2vw, 1.25rem) auto; background: white; padding: clamp(1rem, 4vw, 1.875rem); border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
         .btn { background: var(--gold); color: #000; padding: clamp(0.75rem, 2vw, 1.125rem) clamp(1rem, 3vw, 1.5rem); border: none; border-radius: 8px; font-weight: bold; cursor: pointer; text-decoration: none; display: flex; align-items: center; justify-content: center; font-size: var(--btn-font); min-height: clamp(2.5rem, 8vw, 3.5rem); min-width: clamp(2.5rem, 8vw, 3.5rem); touch-action: manipulation; }
         .btn-pink { background: var(--pink); color: white; }
@@ -122,7 +122,7 @@ TEMPLATE = """
 <body>
 
 <div class="header">
-    <img src="{{ theme.LOGO.path }}" alt="{{ theme.LOGO.alt }}" style="max-width: 140px; max-height: 140px; margin-bottom: 10px;">
+    <img src="{{ theme.LOGO.path }}" alt="{{ theme.LOGO.alt }}" style="max-width: 180px; max-height: 180px; margin-bottom: 16px;">
     <h1>{{ theme.BRAND.name }}</h1>
     <p>{{ theme.BRAND.tagline }} • {{ theme.BRAND.description }}</p>
 </div>
