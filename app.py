@@ -716,7 +716,7 @@ TEMPLATE = """
         </div>
 
         <!-- MODAL CARRITO FULLSCREEN -->
-        <div id="cartModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: white; z-index: 3000; padding: 0; overflow: hidden; flex-direction: column;">
+        <div id="cartModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: white; z-index: 3000; padding: 0; overflow: hidden; flex-direction: column; display: flex;">
             <!-- Header -->
             <div style="background: var(--pink); color: white; padding: 25px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.15);">
                 <h2 style="margin: 0; font-size: 32px; font-weight: bold;">🛒 Tu Carrito</h2>
@@ -724,24 +724,24 @@ TEMPLATE = """
             </div>
 
             <!-- Contenido Items - Scroll -->
-            <div id="cartItemsModal" style="padding: 25px; flex: 1; overflow-y: auto;">
+            <div id="cartItemsModal" style="padding: 25px; padding-bottom: 450px; flex: 1; overflow-y: auto;">
                 <p style="text-align: center; color: #999; margin: 80px 0; font-size: 22px;">Carrito vacío</p>
             </div>
 
-            <!-- Footer Total y Botones -->
-            <div style="background: #f8f8f8; padding: 30px; border-top: 3px solid #D4AF37; flex-shrink: 0; box-shadow: 0 -4px 10px rgba(0,0,0,0.1);">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 28px; font-size: 36px; font-weight: bold; padding: 18px 0; border-bottom: 2px solid #DDD;">
+            <!-- Footer Total y Botones - FIJO -->
+            <div style="position: fixed; bottom: 0; left: 0; right: 0; background: #f8f8f8; padding: 30px; border-top: 3px solid #D4AF37; z-index: 100; box-shadow: 0 -4px 10px rgba(0,0,0,0.1);">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 28px; font-size: 40px; font-weight: bold; padding: 18px 0; border-bottom: 2px solid #DDD;">
                     <span style="color: #333;">TOTAL:</span>
                     <span id="cartTotalModal" style="color: #4CAF50;">$ 0.00</span>
                 </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
-                        <button type="button" onclick="toggleCartModal()" class="btn" style="background: #FFC107; color: black; padding: 24px; font-size: 22px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; min-height: 65px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
+                        <button type="button" onclick="toggleCartModal()" class="btn" style="background: #FFC107; color: black; padding: 48px; font-size: 44px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; min-height: 130px;">
                             ← Seguir Comprando
                         </button>
-                        <button type="button" onclick="toggleDiscountMode()" id="discountToggleBtn" class="btn" style="background: #FF9800; color: white; padding: 24px; font-size: 22px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; min-height: 65px;">
+                        <button type="button" onclick="toggleDiscountMode()" id="discountToggleBtn" class="btn" style="background: #FF9800; color: white; padding: 48px; font-size: 44px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; min-height: 130px;">
                             💰 Descuento
                         </button>
-                        <button type="button" onclick="clearCart()" class="btn" style="background: #f44336; color: white; padding: 24px; font-size: 22px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; min-height: 65px;">
+                        <button type="button" onclick="clearCart()" class="btn" style="background: #f44336; color: white; padding: 48px; font-size: 44px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; min-height: 130px;">
                             🗑️ Limpiar
                         </button>
                     </div>
