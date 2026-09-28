@@ -59,58 +59,63 @@ TEMPLATE = """
     <meta charset="UTF-8">
     <title>Muse Studio - Mini ERP</title>
     <style>
-        :root { --bg-dark: #121212; --gold: #D4AF37; --pink: #FF69B4; --light-pink: #FFF0F5; --danger: #ff6b6b; }
+        :root {
+            --bg-dark: #121212; --gold: #D4AF37; --pink: #FF69B4; --light-pink: #FFF0F5; --danger: #ff6b6b;
+            --base-font: clamp(0.875rem, 2.5vw, 1.125rem);
+            --h2-font: clamp(1.5rem, 5vw, 1.75rem);
+            --h3-font: clamp(1.25rem, 4vw, 1.5rem);
+            --btn-font: clamp(0.875rem, 2.5vw, 1.25rem);
+            --table-font: clamp(0.75rem, 2vw, 1.125rem);
+        }
         * { -webkit-text-size-adjust: 100%; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f9f9f9; margin: 0; padding: 0; color: #333; font-size: 18px; }
-        h1, h2, h3 { font-size: 1.5em; }
-        h2 { font-size: 28px; }
-        h3 { font-size: 24px; }
-        label { font-size: 18px; font-weight: 600; }
-        .header { background: var(--bg-dark); color: var(--gold); padding: 25px 15px; text-align: center; border-bottom: 3px solid var(--pink); }
-        .header h1 { margin: 0; font-size: 28px; }
-        .header p { margin: 8px 0 0 0; color: var(--pink); font-size: 20px; }
-        .container { max-width: 1000px; margin: 20px auto; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
-        .btn { background: var(--gold); color: #000; padding: 18px 24px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; text-decoration: none; display: inline-block; font-size: 20px; min-height: 55px; display: flex; align-items: center; }
+        html { font-size: 16px; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f9f9f9; margin: 0; padding: 0; color: #333; font-size: var(--base-font); line-height: 1.5; }
+        h1, h2, h3 { margin: 0.5rem 0; }
+        h2 { font-size: var(--h2-font); }
+        h3 { font-size: var(--h3-font); }
+        label { font-size: clamp(0.875rem, 2.5vw, 1.125rem); font-weight: 600; display: block; margin-bottom: 0.5rem; }
+        .header { background: var(--bg-dark); color: var(--gold); padding: clamp(1rem, 5vw, 1.875rem) 1rem; text-align: center; border-bottom: 3px solid var(--pink); }
+        .header h1 { margin: 0; font-size: clamp(1.5rem, 6vw, 1.75rem); }
+        .header p { margin: 0.5rem 0 0 0; color: var(--pink); font-size: clamp(1rem, 3vw, 1.25rem); }
+        .container { max-width: 1000px; margin: clamp(0.625rem, 2vw, 1.25rem) auto; background: white; padding: clamp(1rem, 4vw, 1.875rem); border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
+        .btn { background: var(--gold); color: #000; padding: clamp(0.75rem, 2vw, 1.125rem) clamp(1rem, 3vw, 1.5rem); border: none; border-radius: 8px; font-weight: bold; cursor: pointer; text-decoration: none; display: flex; align-items: center; justify-content: center; font-size: var(--btn-font); min-height: clamp(2.5rem, 8vw, 3.5rem); min-width: clamp(2.5rem, 8vw, 3.5rem); touch-action: manipulation; }
         .btn-pink { background: var(--pink); color: white; }
         .btn-dark { background: var(--bg-dark); color: var(--gold); }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 20px; }
-        th, td { border: 1px solid #e0e0e0; padding: 20px; text-align: left; }
-        th { background-color: var(--light-pink); font-weight: bold; font-size: 20px; }
-        .alert { padding: 16px; background: #d4edda; color: #155724; margin-bottom: 20px; border-radius: 8px; font-size: 20px; }
-        form input, form select, textarea { padding: 18px; margin: 14px 0 20px 0; width: 100%; box-sizing: border-box; border: 2px solid #ddd; border-radius: 8px; font-size: 20px; }
-        td .btn { font-size: 18px; padding: 14px 18px; min-height: 48px; margin: 6px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 1.25rem; font-size: var(--table-font); overflow-x: auto; display: block; }
+        th, td { border: 1px solid #e0e0e0; padding: clamp(0.625rem, 2vw, 1.25rem); text-align: left; }
+        th { background-color: var(--light-pink); font-weight: bold; }
+        .alert { padding: 1rem; background: #d4edda; color: #155724; margin-bottom: 1.25rem; border-radius: 8px; font-size: var(--base-font); }
+        form input, form select, textarea { padding: clamp(0.875rem, 2.5vw, 1.125rem); margin: clamp(0.875rem, 2vw, 1.25rem) 0 clamp(1.25rem, 3vw, 1.5rem) 0; width: 100%; box-sizing: border-box; border: 2px solid #ddd; border-radius: 8px; font-size: var(--base-font); min-height: clamp(2.75rem, 8vw, 3.125rem); }
+        td .btn { font-size: clamp(0.75rem, 2vw, 1rem); padding: clamp(0.5rem, 1.5vw, 0.875rem) clamp(0.75rem, 2vw, 1.125rem); min-height: clamp(2rem, 6vw, 2.75rem); margin: clamp(0.25rem, 1vw, 0.5rem); }
         form input:focus, form select:focus, textarea:focus { border-color: var(--pink); outline: none; }
-        .nav-bar { background: #222; color: white; border-bottom: 2px solid var(--pink); padding: 15px; }
-        .nav-bar a { color: var(--gold); text-decoration: none; transition: all 0.3s ease; font-size: 18px; }
+        .nav-bar { background: #222; color: white; border-bottom: 2px solid var(--pink); padding: clamp(0.75rem, 2vw, 1rem); overflow-x: auto; }
+        .nav-bar a { color: var(--gold); text-decoration: none; transition: all 0.3s ease; font-size: clamp(0.75rem, 2vw, 1.125rem); min-height: 44px; display: flex; align-items: center; padding: clamp(0.5rem, 1.5vw, 0.875rem); }
         .nav-bar a:hover { background: rgba(212, 175, 55, 0.2) !important; transform: translateY(-2px); }
-        .kpi-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 30px; }
-        .kpi-card { background: #fff5f8; border: 2px solid #ffccd5; padding: 20px; border-radius: 12px; text-align: center; }
-        .kpi-card h3 { margin: 0; color: #666; font-size: 16px; }
-        .kpi-card p { margin: 12px 0 0 0; font-size: 32px; font-weight: bold; color: var(--pink); }
-        .quick-actions { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; margin-bottom: 25px; }
-        .quick-actions .btn { padding: 30px 15px; font-size: 24px; min-height: 120px; flex-direction: column; text-align: center; gap: 12px; line-height: 1.3; font-weight: bold; }
+        .kpi-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: clamp(1rem, 2vw, 1.875rem); margin-bottom: 1.875rem; }
+        .kpi-card { background: #fff5f8; border: 2px solid #ffccd5; padding: clamp(1rem, 3vw, 1.5rem); border-radius: 12px; text-align: center; }
+        .kpi-card h3 { margin: 0; color: #666; font-size: clamp(0.875rem, 2vw, 1rem); }
+        .kpi-card p { margin: clamp(0.75rem, 2vw, 1rem) 0 0 0; font-size: clamp(1.5rem, 6vw, 2rem); font-weight: bold; color: var(--pink); }
+        .quick-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: clamp(1rem, 2vw, 1.125rem); margin-bottom: 1.5rem; }
+        .quick-actions .btn { padding: clamp(1.5rem, 4vw, 2rem) clamp(1rem, 2vw, 1rem); font-size: clamp(1rem, 3vw, 1.5rem); min-height: clamp(5rem, 15vw, 7.5rem); flex-direction: column; gap: clamp(0.75rem, 2vw, 1rem); line-height: 1.3; }
         .kpi-value { transition: filter 0.3s ease; }
         .kpi-value.hidden { filter: blur(8px); }
         .kpi-value.hidden::after { content: '••••'; position: absolute; left: 50%; transform: translateX(-50%); }
         button[onclick*="toggleValues"] { transition: all 0.3s ease; }
 
         @media (max-width: 768px) {
-            .container { padding: 16px; margin: 10px auto; }
-            table { font-size: 14px; display: block; overflow-x: auto; }
-            th, td { padding: 10px 8px; font-size: 13px; }
-            th { font-size: 12px; }
+            :root { --base-font: clamp(0.875rem, 2vw, 1rem); --table-font: clamp(0.75rem, 1.5vw, 0.875rem); }
+            .container { padding: clamp(1rem, 3vw, 1.25rem); margin: clamp(0.5rem, 1vw, 1rem) auto; }
+            table { font-size: var(--table-font); }
+            th, td { padding: clamp(0.5rem, 1.5vw, 0.875rem); }
             .kpi-container { grid-template-columns: 1fr; }
             .quick-actions { grid-template-columns: 1fr; }
-            .quick-actions .btn { min-height: 70px; font-size: 16px; padding: 16px 12px; }
-            h2 { font-size: 20px; }
-            h3 { font-size: 16px; }
-            .btn { font-size: 14px; padding: 10px 14px; min-height: 40px; }
-            td .btn { font-size: 12px; padding: 6px 10px; min-height: 32px; margin: 2px 0; display: block; width: 100%; margin-bottom: 4px; }
-            form input, form select, textarea { font-size: 14px; padding: 12px; }
-            label { font-size: 14px; }
-            .nav-bar a { font-size: 12px; padding: 6px 8px; }
-            body { font-size: 14px; }
-            .nav-bar { padding: 8px 12px; }
+            .quick-actions .btn { min-height: clamp(4rem, 12vw, 5rem); font-size: clamp(0.875rem, 2.5vw, 1rem); }
+            .btn { min-height: clamp(2.5rem, 7vw, 2.75rem); }
+            td .btn { display: block; width: 100%; margin-bottom: clamp(0.25rem, 1vw, 0.5rem); }
+            form input, form select, textarea { min-height: clamp(2.5rem, 7vw, 2.75rem); }
+            label { font-size: clamp(0.75rem, 2vw, 0.875rem); }
+            .nav-bar a { font-size: clamp(0.625rem, 1.5vw, 0.75rem); min-height: 40px; }
+            .nav-bar { padding: clamp(0.5rem, 1vw, 0.75rem); }
         }
     </style>
 </head>
