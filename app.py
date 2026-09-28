@@ -88,8 +88,8 @@ TEMPLATE = """
         form input, form select, textarea { padding: clamp(0.875rem, 2.5vw, 1.125rem); margin: clamp(0.875rem, 2vw, 1.25rem) 0 clamp(1.25rem, 3vw, 1.5rem) 0; width: 100%; box-sizing: border-box; border: 2px solid #ddd; border-radius: 8px; font-size: var(--base-font); min-height: clamp(2.75rem, 8vw, 3.125rem); }
         td .btn { font-size: clamp(0.75rem, 2vw, 1rem); padding: clamp(0.5rem, 1.5vw, 0.875rem) clamp(0.75rem, 2vw, 1.125rem); min-height: clamp(2rem, 6vw, 2.75rem); margin: clamp(0.25rem, 1vw, 0.5rem); }
         form input:focus, form select:focus, textarea:focus { border-color: var(--pink); outline: none; }
-        .nav-bar { background: #222; color: white; border-bottom: 2px solid var(--pink); padding: clamp(0.75rem, 2vw, 1rem); overflow-x: auto; }
-        .nav-bar a { color: var(--gold); text-decoration: none; transition: all 0.3s ease; font-size: clamp(0.75rem, 2vw, 1.125rem); min-height: 44px; display: flex; align-items: center; padding: clamp(0.5rem, 1.5vw, 0.875rem); }
+        .nav-bar { background: #222; color: white; border-bottom: 3px solid var(--pink); padding: clamp(1.5rem, 4vw, 2rem); overflow-x: auto; }
+        .nav-bar a { color: var(--gold); text-decoration: none; transition: all 0.3s ease; font-size: clamp(1.25rem, 3.5vw, 1.75rem); min-height: 88px; display: flex; align-items: center; padding: clamp(1rem, 2.5vw, 1.5rem); }
         .nav-bar a:hover { background: rgba(212, 175, 55, 0.2) !important; transform: translateY(-2px); }
         .kpi-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: clamp(1rem, 2vw, 1.875rem); margin-bottom: 1.875rem; }
         .kpi-card { background: #fff5f8; border: 2px solid #ffccd5; padding: clamp(1rem, 3vw, 1.5rem); border-radius: 12px; text-align: center; }
@@ -114,8 +114,8 @@ TEMPLATE = """
             td .btn { display: block; width: 100%; margin-bottom: clamp(0.25rem, 1vw, 0.5rem); }
             form input, form select, textarea { min-height: clamp(2.5rem, 7vw, 2.75rem); }
             label { font-size: clamp(0.75rem, 2vw, 0.875rem); }
-            .nav-bar a { font-size: clamp(0.625rem, 1.5vw, 0.75rem); min-height: 40px; }
-            .nav-bar { padding: clamp(0.5rem, 1vw, 0.75rem); }
+            .nav-bar a { font-size: clamp(1rem, 2.5vw, 1.25rem); min-height: 70px; }
+            .nav-bar { padding: clamp(1rem, 2vw, 1.5rem); }
         }
     </style>
 </head>
@@ -246,8 +246,8 @@ TEMPLATE = """
     {% elif session.get('role') in ['admin', 'vendedor'] and request.endpoint == 'admin_dashboard' %}
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
             <h2 style="margin: 0;">{{ theme.OPERATIONS.historial }} Dashboard General - Muse Studio</h2>
-            <button type="button" onclick="toggleValuesVisibility()" style="background: var(--bg-dark); color: var(--gold); border: 2px solid var(--gold); padding: 14px 15px; border-radius: 5px; cursor: pointer; font-size: 18px; font-weight: bold;">
-                👁️ Mostrar
+            <button type="button" onclick="toggleValuesVisibility()" style="background: var(--bg-dark); color: var(--gold); border: 3px solid var(--gold); padding: 28px 30px; border-radius: 8px; cursor: pointer; font-size: 36px; font-weight: bold; min-height: 90px; display: flex; align-items: center; justify-content: center;">
+                Mostrar
             </button>
         </div>
 
