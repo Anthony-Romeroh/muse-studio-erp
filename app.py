@@ -288,7 +288,7 @@ TEMPLATE = """
         </div>
 
         <script>
-            let valuesVisible = true;
+            let valuesVisible = false;
             function toggleValuesVisibility() {
                 const values = document.querySelectorAll('.kpi-value');
                 const button = event.target;
@@ -303,8 +303,8 @@ TEMPLATE = """
                     }
                 });
 
-                button.textContent = valuesVisible ? '👁️ Mostrar' : '🙈 Ocultar';
-                button.style.background = valuesVisible ? 'var(--bg-dark)' : '#f44336';
+                button.textContent = valuesVisible ? 'Ocultar' : 'Mostrar';
+                button.style.background = valuesVisible ? '#f44336' : 'var(--bg-dark)';
                 button.style.borderColor = valuesVisible ? 'var(--gold)' : '#f44336';
             }
         </script>
