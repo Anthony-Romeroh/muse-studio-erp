@@ -571,8 +571,10 @@ TEMPLATE = """
                     <option value="last">{{ theme.OPERATIONS.ultima }} Última</option>
                 </select>
             </div>
-            <button type="submit" class="btn btn-pink">Registrar Entrada y Actualizar Stock</button>
-            <a href="/admin" class="btn" style="background: #ccc; margin-left: 10px;">Cancelar</a>
+            <div style="display: flex; gap: 16px; margin-top: 20px;">
+                <button type="submit" class="btn btn-pink" style="flex: 1;">Registrar Entrada y Actualizar Stock</button>
+                <a href="/admin" class="btn" style="background: #ccc; flex: 1; text-align: center;">Cancelar</a>
+            </div>
         </form>
         <script>
             const productSearch = document.getElementById('productSearch');
