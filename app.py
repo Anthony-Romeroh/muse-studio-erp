@@ -716,7 +716,7 @@ TEMPLATE = """
         </div>
 
         <!-- MODAL CARRITO FULLSCREEN -->
-        <div id="cartModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: white; z-index: 3000; padding: 0; overflow: hidden; flex-direction: column; display: flex;">
+        <div id="cartModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: white; z-index: 3000; padding: 0; overflow: hidden; flex-direction: column;">
             <!-- Header -->
             <div style="background: var(--pink); color: white; padding: 25px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.15);">
                 <h2 style="margin: 0; font-size: 32px; font-weight: bold;">🛒 Tu Carrito</h2>
@@ -756,7 +756,7 @@ TEMPLATE = """
 
             function toggleCartModal() {
                 const modal = document.getElementById('cartModal');
-                modal.style.display = modal.style.display === 'none' ? 'block' : 'none';
+                modal.style.display = modal.style.display === 'none' ? 'flex' : 'none';
                 updateCartModal();
             }
 
