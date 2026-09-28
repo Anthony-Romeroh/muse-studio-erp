@@ -1579,7 +1579,12 @@ def login():
         if user and check_password_hash(user.password, request.form['password']):
             session['user'] = user.username
             session['role'] = user.role
-            return redirect(url_for('dev_panel' if user.role == 'dev' else 'admin_dashboard'))
+            if user.role == 'dev':
+                return redirect(url_for('dev_panel'))
+            elif user.role == 'admin':
+                return redirect(url_for('admin_dashboard'))
+            else:  # vendedor
+                return redirect(url_for('admin_sale'))
         flash('Credenciales inválidas.')
     return render_template_string(TEMPLATE, theme=Theme)
 
