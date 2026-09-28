@@ -689,16 +689,16 @@ TEMPLATE = """
                 <!-- Botones - Stack en mobile, grid en desktop -->
                 <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
                     <button type="button" onclick="toggleCartModal()" class="btn" style="background: #FFC107; color: black; padding: 48px; font-size: 44px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; min-height: 130px;">
-                        📋 Ver Carrito
+                        Ver Carrito
                     </button>
                     <button type="button" onclick="toggleDiscountMode()" id="discountToggleBtn" class="btn" style="background: #FF9800; color: white; padding: 48px; font-size: 44px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; min-height: 130px;">
-                        💰 Descuento
+                        Descuento
                     </button>
                     <form method="POST" id="checkoutForm" style="margin: 0;">
                         <input type="hidden" name="date" value="{{ today }}">
                         <div id="formItems"></div>
                         <button type="submit" class="btn btn-pink" style="width: 100%; padding: 48px; font-size: 44px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; background: var(--pink); color: white; box-shadow: 0 2px 8px rgba(0,0,0,0.15); transition: all 0.2s; min-height: 130px;">
-                            ✅ PROCESAR
+                            PROCESAR
                         </button>
                     </form>
                 </div>
@@ -736,13 +736,13 @@ TEMPLATE = """
                 </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
                         <button type="button" onclick="toggleCartModal()" class="btn" style="background: #FFC107; color: black; padding: 48px; font-size: 44px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; min-height: 130px;">
-                            ← Seguir Comprando
+                            Seguir Comprando
                         </button>
                         <button type="button" onclick="toggleDiscountMode()" id="discountToggleBtn" class="btn" style="background: #FF9800; color: white; padding: 48px; font-size: 44px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; min-height: 130px;">
-                            💰 Descuento
+                            Descuento
                         </button>
                         <button type="button" onclick="clearCart()" class="btn" style="background: #f44336; color: white; padding: 48px; font-size: 44px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; min-height: 130px;">
-                            🗑️ Limpiar
+                            Limpiar
                         </button>
                     </div>
                 </div>
@@ -786,23 +786,23 @@ TEMPLATE = """
                 filtered.forEach(product => {
                     const isInactive = product.status !== 'ativo';
                     const cardHTML = `
-                        <div style="background: white; border-left: 6px solid var(--pink); border-radius: 10px; padding: 28px 22px; cursor: pointer; transition: all 0.3s; display: flex; justify-content: space-between; align-items: center; min-height: 140px; ${isInactive ? 'opacity: 0.5; pointer-events: none;' : 'box-shadow: 0 2px 8px rgba(0,0,0,0.12);'}">
+                        <div style="background: white; border-left: 8px solid var(--pink); border-radius: 10px; padding: 36px 28px; cursor: pointer; transition: all 0.3s; display: flex; justify-content: space-between; align-items: center; min-height: 180px; ${isInactive ? 'opacity: 0.5; pointer-events: none;' : 'box-shadow: 0 2px 8px rgba(0,0,0,0.12);'}">
                             <div style="flex: 1;">
-                                <div style="font-weight: bold; color: #333; margin-bottom: 8px; font-size: 24px;">${product.name}</div>
-                                <div style="font-size: 20px; color: #999; margin-bottom: 10px;">${product.code}</div>
-                                <div style="display: flex; gap: 20px; font-size: 18px;">
-                                    <span style="color: var(--pink); font-weight: bold; font-size: 20px;">$ ${product.avg_price.toFixed(2)}</span>
-                                    <span style="color: #666;">Stock: <strong style="color: ${product.stock > 0 ? '#4CAF50' : '#f44336'}; font-size: 20px;">${product.stock}</strong></span>
+                                <div style="font-weight: bold; color: #333; margin-bottom: 12px; font-size: 32px;">${product.name}</div>
+                                <div style="font-size: 28px; color: #999; margin-bottom: 14px;">${product.code}</div>
+                                <div style="display: flex; gap: 20px; font-size: 20px;">
+                                    <span style="color: var(--pink); font-weight: bold; font-size: 28px;">$ ${product.avg_price.toFixed(2)}</span>
+                                    <span style="color: #666;">Stock: <strong style="color: ${product.stock > 0 ? '#4CAF50' : '#f44336'}; font-size: 28px;">${product.stock}</strong></span>
                                 </div>
                             </div>
                             <div>
                                 ${product.stock > 0 ? `
-                                    <button type="button" onclick="addToCart('${product.code}', '${product.name}', ${product.avg_price}, ${product.stock})" class="btn" style="padding: 18px 24px; font-size: 18px; background: var(--pink); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; white-space: nowrap; min-height: 60px;">
-                                        ➕ Agregar
+                                    <button type="button" onclick="addToCart('${product.code}', '${product.name}', ${product.avg_price}, ${product.stock})" class="btn" style="padding: 28px 36px; font-size: 28px; background: var(--pink); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; white-space: nowrap; min-height: 100px;">
+                                        Agregar
                                     </button>
                                 ` : `
-                                    <div style="padding: 18px 24px; color: #f44336; font-size: 16px; font-weight: bold; background: #ffebee; border-radius: 8px; text-align: center; min-height: 60px; display: flex; align-items: center;">
-                                        ❌ Sin Stock
+                                    <div style="padding: 28px 36px; color: #f44336; font-size: 28px; font-weight: bold; background: #ffebee; border-radius: 8px; text-align: center; min-height: 100px; display: flex; align-items: center;">
+                                        Sin Stock
                                     </div>
                                 `}
                             </div>
@@ -923,7 +923,7 @@ TEMPLATE = """
                                 <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 27px; border-top: 2px solid #eee;">
                                     <strong style="color: #4CAF50; font-size: 51px;">$ ${subtotal.toFixed(2)}</strong>
                                     <button type="button" onclick="removeFromCart('${item.code}')" class="btn" style="padding: 20px 34px; font-size: 31px; background: #f44336; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; min-height: 68px;">
-                                        ✕ Quitar
+                                        Quitar
                                     </button>
                                 </div>
                             </div>
