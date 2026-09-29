@@ -497,8 +497,10 @@ TEMPLATE = """
         </div>
 
         <script>
+            console.log('Script initialized for catalog modal');
             // Funciones para el modal de edición
             function openEditModal(code, name, category, salePrice) {
+                console.log('openEditModal called with code:', code);
                 document.getElementById('modalProductCode').value = code;
                 document.getElementById('modalName').value = name;
                 document.getElementById('modalCategory').value = category;
@@ -507,6 +509,7 @@ TEMPLATE = """
                 document.getElementById('modalCostTotal').value = 0;
                 document.getElementById('editModal').style.display = 'flex';
                 window.currentProductCode = code;
+                console.log('currentProductCode set to:', window.currentProductCode);
             }
 
             function closeEditModal() {
