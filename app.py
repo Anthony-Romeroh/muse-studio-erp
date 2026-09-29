@@ -2276,7 +2276,6 @@ def edit_product(code):
     if request.method == 'POST':
         product.name = request.form['name'].upper()
         product.category = request.form['category'].upper()
-        product.cost_price = float(request.form['cost_price'])
         product.sale_price = float(request.form['sale_price'])
         quantity_adjustment = int(request.form.get('quantity_adjustment', 0) or 0)
 
