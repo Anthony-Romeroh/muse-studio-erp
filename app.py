@@ -497,10 +497,8 @@ TEMPLATE = """
         </div>
 
         <script>
-            console.log('Script initialized for catalog modal');
             // Funciones para el modal de edición
             function openEditModal(code, name, category, salePrice) {
-                console.log('openEditModal called with code:', code);
                 document.getElementById('modalProductCode').value = code;
                 document.getElementById('modalName').value = name;
                 document.getElementById('modalCategory').value = category;
@@ -509,7 +507,6 @@ TEMPLATE = """
                 document.getElementById('modalCostTotal').value = 0;
                 document.getElementById('editModal').style.display = 'flex';
                 window.currentProductCode = code;
-                console.log('currentProductCode set to:', window.currentProductCode);
             }
 
             function closeEditModal() {
@@ -520,23 +517,19 @@ TEMPLATE = """
                 event.preventDefault();
                 const form = document.getElementById('editForm');
                 const code = window.currentProductCode;
-                console.log('Code from window:', code);
                 const url = '/admin/product/edit/' + code;
-                console.log('Posting to:', url);
                 const formData = new FormData(form);
 
                 fetch(url, {
                     method: 'POST',
                     body: formData
                 }).then(response => {
-                    console.log('Response:', response.status);
                     if (response.ok) {
                         window.location.href = '/admin/catalog';
                     } else {
                         alert('Error al guardar: ' + response.status);
                     }
                 }).catch(error => {
-                    console.error('Error:', error);
                     alert('Error: ' + error);
                 });
             }
