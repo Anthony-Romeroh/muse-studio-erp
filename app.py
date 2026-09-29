@@ -2135,9 +2135,9 @@ def admin_catalog():
         if sales:
             total_sale = sum(s.quantity * s.unit_price for s in sales)
             total_qty_sale = sum(s.quantity for s in sales)
-            p.avg_sale = total_sale / total_qty_sale if total_qty_sale > 0 else 0
+            p.avg_sale = total_sale / total_qty_sale if total_qty_sale > 0 else p.sale_price
         else:
-            p.avg_sale = 0
+            p.avg_sale = p.sale_price
 
     return render_template_string(TEMPLATE, products=products, theme=Theme)
 
