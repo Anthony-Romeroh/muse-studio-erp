@@ -548,12 +548,14 @@ TEMPLATE = """
             const marginPercent = document.getElementById('marginPercent');
 
             function updateMargin() {
-                const cost = parseFloat(costInput.value) || 0;
-                const sale = parseFloat(saleInput.value) || 0;
+                const costTotal = parseFloat(costInput.value) || 0;
+                const saleUnitario = parseFloat(saleInput.value) || 0;
                 const qty = parseInt(qtyInput.value) || 1;
-                const marginUnitario = sale - cost;
-                const marginTotal = marginUnitario * qty;
-                const percent = sale > 0 ? ((marginUnitario / sale) * 100).toFixed(1) : 0;
+                const ventaTotal = saleUnitario * qty;
+                const marginTotal = ventaTotal - costTotal;
+                const costUnitario = qty > 0 ? (costTotal / qty).toFixed(2) : 0;
+                const marginUnitario = saleUnitario - costUnitario;
+                const percent = saleUnitario > 0 ? ((marginUnitario / saleUnitario) * 100).toFixed(1) : 0;
 
                 marginResult.textContent = '$ ' + marginTotal.toFixed(2) + ' (' + qty + 'x)';
                 marginPercent.textContent = marginUnitario.toFixed(2) + ' unitario | ' + percent + '% ganancia';
