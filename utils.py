@@ -15,8 +15,8 @@ def generate_sku():
     product_count = Product.query.count()
     next_number = product_count + 1
 
-    # Formato: MS-000001, MS-000002, etc
-    sku = f"MS-{next_number:06d}"
+    # Formato: MS-0000001, MS-0000002, etc
+    sku = f"MS-{next_number:07d}"
 
     return sku
 
