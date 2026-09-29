@@ -435,9 +435,9 @@ TEMPLATE = """
                 </div>
                 {% if session['role'] == 'admin' %}
                 <div style="display: flex; flex-direction: column; gap: 8px;">
-                    <a href="/admin/product/edit/{{ p.code }}" class="btn" style="background: #2196F3; color: white; padding: 12px 16px; font-size: 16px;">
+                    <button type="button" onclick="openEditModal('{{ p.code }}', '{{ p.name }}', '{{ p.category }}', {{ p.sale_price }})" class="btn" style="background: #2196F3; color: white; padding: 12px 16px; font-size: 16px; cursor: pointer;">
                         ✏️ Editar
-                    </a>
+                    </button>
                     <a href="/admin/product/toggle/{{ p.code }}" class="btn" style="background: #FFC107; color: #000; padding: 12px 16px; font-size: 16px;">
                         {% if p.status == 'ativo' %} 🔒 Desactivar {% else %} ✅ Activar {% endif %}
                     </a>
@@ -449,6 +449,53 @@ TEMPLATE = """
             </div>
             {% endfor %}
         </div>
+
+        <!-- MODAL DE EDICIÓN -->
+        <div id="editModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; flex-direction: column;">
+            <div style="background: white; padding: 30px; border-radius: 12px; max-width: 500px; width: 90%; box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
+                <h2 style="margin: 0 0 20px 0;">✏️ Editar Producto</h2>
+
+                <form id="editForm" method="POST" style="display: flex; flex-direction: column; gap: 16px;">
+                    <input type="hidden" name="product_code" id="modalProductCode">
+
+                    <div>
+                        <label style="font-weight: bold;">Nombre:</label>
+                        <input type="text" id="modalName" name="name" required style="padding: 12px; border: 2px solid #ddd; border-radius: 5px; width: 100%; box-sizing: border-box;">
+                    </div>
+
+                    <div>
+                        <label style="font-weight: bold;">Categoría:</label>
+                        <input type="text" id="modalCategory" name="category" required style="padding: 12px; border: 2px solid #ddd; border-radius: 5px; width: 100%; box-sizing: border-box;">
+                    </div>
+
+                    <div>
+                        <label style="font-weight: bold;">🛍️ Valor de Venta Unitário ($):</label>
+                        <input type="number" step="0.01" id="modalSalePrice" name="sale_price" required style="padding: 12px; border: 2px solid #4CAF50; border-radius: 5px; width: 100%; box-sizing: border-box;">
+                    </div>
+
+                    <hr style="margin: 10px 0; border: none; border-top: 1px solid #eee;">
+
+                    <h4 style="margin: 10px 0; color: #FF9800;">➕ Agregar Cantidad</h4>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                        <div>
+                            <label style="font-weight: bold;">Cantidad:</label>
+                            <input type="number" id="modalQuantity" name="quantity_adjustment" min="0" placeholder="0" style="padding: 12px; border: 2px solid #FF9800; border-radius: 5px; width: 100%; box-sizing: border-box;">
+                        </div>
+                        <div>
+                            <label style="font-weight: bold;">Valor Compra ($):</label>
+                            <input type="number" step="0.01" id="modalCostTotal" name="cost_adjustment_total" placeholder="0.00" style="padding: 12px; border: 2px solid #FF9800; border-radius: 5px; width: 100%; box-sizing: border-box;">
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 12px; margin-top: 20px;">
+                        <button type="submit" class="btn btn-pink" style="flex: 1; padding: 12px;">✅ Guardar</button>
+                        <button type="button" onclick="closeEditModal()" style="flex: 1; padding: 12px; background: #ccc; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">❌ Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
         <script>
             const table = document.getElementById('dataTable');
             const filterInput = document.getElementById('filterInput');
@@ -495,6 +542,45 @@ TEMPLATE = """
                         h.style.fontWeight = i === index ? 'bold' : '';
                     });
                 });
+            });
+
+            // Funciones para el modal de edición
+            function openEditModal(code, name, category, salePrice) {
+                document.getElementById('modalProductCode').value = code;
+                document.getElementById('modalName').value = name;
+                document.getElementById('modalCategory').value = category;
+                document.getElementById('modalSalePrice').value = salePrice;
+                document.getElementById('modalQuantity').value = 0;
+                document.getElementById('modalCostTotal').value = 0;
+                document.getElementById('editModal').style.display = 'flex';
+            }
+
+            function closeEditModal() {
+                document.getElementById('editModal').style.display = 'none';
+            }
+
+            // Cerrar modal al hacer click fuera
+            document.getElementById('editModal').addEventListener('click', function(e) {
+                if (e.target === this) closeEditModal();
+            });
+
+            // Procesar formulario de edición
+            document.getElementById('editForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const code = document.getElementById('modalProductCode').value;
+                const formData = new FormData(this);
+
+                fetch('/admin/product/edit/' + code, {
+                    method: 'POST',
+                    body: formData
+                }).then(r => {
+                    if (r.ok) {
+                        closeEditModal();
+                        location.reload();
+                    } else {
+                        alert('Error al guardar');
+                    }
+                }).catch(err => alert('Error: ' + err));
             });
         </script>
 
