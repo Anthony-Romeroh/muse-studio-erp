@@ -408,7 +408,7 @@ TEMPLATE = """
         </div>
         <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 18px; margin-top: 20px;">
             {% for p in products %}
-            <div style="background: white; border-left: 6px solid var(--pink); border-radius: 10px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); {% if p.status == 'inativo' %}opacity: 0.6;{% endif %}" data-sku="{{ p.code }}" data-nombre="{{ p.name }}" data-categoria="{{ p.category }}" data-costo="{{ p.avg_cost }}" data-salida="{{ p.avg_sale }}" data-stock="{{ p.stock }}" data-estado="{{ p.status }}">
+            <div style="background: white; border-left: 6px solid var(--pink); border-radius: 10px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); {% if p.status == 'inativo' %}opacity: 0.6;{% endif %}" data-sku="{{ p.code }}" data-nombre="{{ p.name }}" data-categoria="{{ p.category }}" data-costo="{{ p.cost_price }}" data-salida="{{ p.sale_price }}" data-stock="{{ p.stock }}" data-estado="{{ p.status }}">
                 <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
                     <div style="flex: 1;">
                         <div style="font-size: 20px; font-weight: bold; color: #333;">{{ p.name }}</div>
@@ -420,12 +420,12 @@ TEMPLATE = """
                 <div style="border-top: 1px solid #eee; padding-top: 12px; margin-bottom: 16px;">
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; font-size: 16px;">
                         <div>
-                            <div style="color: #999; font-size: 12px; margin-bottom: 4px;">💰 Costo Prom.</div>
-                            <div style="color: #FF6B9D; font-weight: bold; font-size: 18px;">{{ p.avg_cost | money }}</div>
+                            <div style="color: #999; font-size: 12px; margin-bottom: 4px;">💰 Costo Unit.</div>
+                            <div style="color: #FF6B9D; font-weight: bold; font-size: 18px;">{{ p.cost_price | money }}</div>
                         </div>
                         <div>
-                            <div style="color: #999; font-size: 12px; margin-bottom: 4px;">📊 Venta Prom.</div>
-                            <div style="color: #4CAF50; font-weight: bold; font-size: 18px;">{{ p.avg_sale | money }}</div>
+                            <div style="color: #999; font-size: 12px; margin-bottom: 4px;">📊 Venta Unit.</div>
+                            <div style="color: #4CAF50; font-weight: bold; font-size: 18px;">{{ p.sale_price | money }}</div>
                         </div>
                     </div>
                 </div>
@@ -2121,23 +2121,6 @@ def admin_catalog():
         ts = db.session.query(db.func.sum(Sale.quantity)).filter_by(product_code=p.code).scalar() or 0
         p.stock = tp - ts
 
-        # Calcular custo médio
-        purchases = Purchase.query.filter_by(product_code=p.code).all()
-        if purchases:
-            total_cost = sum(pur.quantity * pur.unit_cost for pur in purchases)
-            total_qty = sum(pur.quantity for pur in purchases)
-            p.avg_cost = total_cost / total_qty if total_qty > 0 else 0
-        else:
-            p.avg_cost = 0
-
-        # Calcular venta media (todos los tiempos)
-        sales = Sale.query.filter_by(product_code=p.code).all()
-        if sales:
-            total_sale = sum(s.quantity * s.unit_price for s in sales)
-            total_qty_sale = sum(s.quantity for s in sales)
-            p.avg_sale = total_sale / total_qty_sale if total_qty_sale > 0 else p.sale_price
-        else:
-            p.avg_sale = p.sale_price
 
     return render_template_string(TEMPLATE, products=products, theme=Theme)
 
