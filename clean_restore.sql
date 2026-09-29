@@ -1,26 +1,30 @@
--- ==================== CLEAN RESTORE LOCAL (SQLite) - APENAS 13 PRODUCTOS ====================
+-- ==================== CLEAN RESTORE - APENAS 13 PRODUCTOS ====================
+-- Execute TUDO isso no Supabase SQL Editor
+-- 1. Copie este arquivo inteiro
+-- 2. Cole no Supabase > SQL Editor
+-- 3. Execute (RUN)
 
 -- ==================== DROP ALL TABLES ====================
-DROP TABLE IF EXISTS inventory_count_item;
-DROP TABLE IF EXISTS inventory_count;
-DROP TABLE IF EXISTS invoice_item;
-DROP TABLE IF EXISTS invoice;
-DROP TABLE IF EXISTS sale;
-DROP TABLE IF EXISTS purchase;
-DROP TABLE IF EXISTS product;
-DROP TABLE IF EXISTS "user";
+DROP TABLE IF EXISTS inventory_count_item CASCADE;
+DROP TABLE IF EXISTS inventory_count CASCADE;
+DROP TABLE IF EXISTS invoice_item CASCADE;
+DROP TABLE IF EXISTS invoice CASCADE;
+DROP TABLE IF EXISTS sale CASCADE;
+DROP TABLE IF EXISTS purchase CASCADE;
+DROP TABLE IF EXISTS product CASCADE;
+DROP TABLE IF EXISTS "user" CASCADE;
 
 -- ==================== CREATE TABLES ====================
 
 CREATE TABLE "user" (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     username VARCHAR(80) UNIQUE NOT NULL,
     password VARCHAR(200) NOT NULL,
     role VARCHAR(20) NOT NULL
 );
 
 CREATE TABLE product (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     code VARCHAR(50) UNIQUE NOT NULL,
     name VARCHAR(120) NOT NULL,
     category VARCHAR(80) NOT NULL,
@@ -31,7 +35,7 @@ CREATE TABLE product (
 );
 
 CREATE TABLE purchase (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     date DATE NOT NULL,
     product_code VARCHAR(50) NOT NULL,
     quantity INTEGER NOT NULL,
@@ -39,7 +43,7 @@ CREATE TABLE purchase (
 );
 
 CREATE TABLE invoice (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     invoice_number VARCHAR(50) UNIQUE NOT NULL,
     date DATE NOT NULL,
     total_amount FLOAT DEFAULT 0 NOT NULL,
@@ -47,7 +51,7 @@ CREATE TABLE invoice (
 );
 
 CREATE TABLE invoice_item (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     invoice_number VARCHAR(50) NOT NULL REFERENCES invoice(invoice_number),
     product_code VARCHAR(50) NOT NULL,
     quantity INTEGER NOT NULL,
@@ -57,7 +61,7 @@ CREATE TABLE invoice_item (
 );
 
 CREATE TABLE sale (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     date DATE NOT NULL,
     product_code VARCHAR(50) NOT NULL,
     quantity INTEGER NOT NULL,
@@ -66,7 +70,7 @@ CREATE TABLE sale (
 );
 
 CREATE TABLE inventory_count (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     count_date DATE NOT NULL,
     status VARCHAR(20) DEFAULT 'em_progreso' NOT NULL,
     total_loss INTEGER DEFAULT 0 NOT NULL,
@@ -76,7 +80,7 @@ CREATE TABLE inventory_count (
 );
 
 CREATE TABLE inventory_count_item (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     inventory_count_id INTEGER NOT NULL REFERENCES inventory_count(id),
     product_code VARCHAR(50) NOT NULL,
     system_quantity INTEGER NOT NULL,
@@ -95,7 +99,8 @@ INSERT INTO "user" (username, password, role) VALUES
 ('vendedor', 'scrypt:32768:8:1$grsUojIyNmKwx6k9$011fbd699a4eaf3a1640230514cd643faa0badd69f19228328626ad628f3240e7a4b2657d941a9a9e1184feb769859523b6433945c4db3272540bdac9860403c', 'vendedor');
 
 -- ==================== INSERT 13 PRODUCTOS (SIN STOCK) ====================
-INSERT INTO product (code, name, category, cost_price, sale_price, min_stock, status) VALUES
+INSERT INTO product (code, name, category, cost_price, sale_price, min_stock, status)
+VALUES
 ('MS-COLET-BEBE-300', 'Colet Panty Bebe Individual', 'Accesorios', 300.0, 1100.0, 1, 'ativo'),
 ('MS-TIBURON-DOUBLE-3600', 'Tiburon Rectangular Double Agarre Color', 'Accesorios', 3600.0, 12000.0, 1, 'ativo'),
 ('MS-TICTAC-ESTRELLA-700', 'Tictac Estrella G Color 1', 'Accesorios', 700.0, 12600.0, 1, 'ativo'),
@@ -110,7 +115,15 @@ INSERT INTO product (code, name, category, cost_price, sale_price, min_stock, st
 ('MS-TIBURON-METAL-3600', 'Tiburon Metal Mediano Cuadrado', 'Accesorios', 3600.0, 3600.0, 1, 'ativo'),
 ('MS-COLET-TRENZA-500', 'Colet Trenza Tubo', 'Accesorios', 500.0, 6000.0, 1, 'ativo');
 
+-- ==================== INDEXES ====================
+CREATE INDEX idx_product_code ON product(code);
+CREATE INDEX idx_purchase_product ON purchase(product_code);
+CREATE INDEX idx_sale_product ON sale(product_code);
+CREATE INDEX idx_invoice_number ON invoice(invoice_number);
+CREATE INDEX idx_inventory_count_date ON inventory_count(count_date);
+
 -- ==================== RESULTADO ====================
 -- ✅ 8 Tablas creadas
 -- ✅ 3 Usuarios: dev (dev123), admin (admin123), vendedor (vendedor123)
 -- ✅ 13 Productos cargados SIN STOCK (stock = 0)
+-- ✅ 5 Indexes para performance
