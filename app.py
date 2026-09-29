@@ -455,7 +455,7 @@ TEMPLATE = """
             <div style="background: white; padding: 30px; border-radius: 12px; max-width: 500px; width: 90%; box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
                 <h2 style="margin: 0 0 20px 0;">✏️ Editar Producto</h2>
 
-                <form id="editForm" method="POST" style="display: flex; flex-direction: column; gap: 16px;">
+                <form id="editForm" onsubmit="handleEditFormSubmit(event)" style="display: flex; flex-direction: column; gap: 16px;">
                     <input type="hidden" name="product_code" id="modalProductCode">
 
                     <div>
@@ -565,10 +565,10 @@ TEMPLATE = """
             });
 
             // Procesar formulario de edición
-            document.getElementById('editForm').addEventListener('submit', function(e) {
+            function handleEditFormSubmit(e) {
                 e.preventDefault();
                 const code = document.getElementById('modalProductCode').value;
-                const formData = new FormData(this);
+                const formData = new FormData(document.getElementById('editForm'));
 
                 fetch('/admin/product/edit/' + code, {
                     method: 'POST',
@@ -581,7 +581,7 @@ TEMPLATE = """
                         alert('Error al guardar');
                     }
                 }).catch(err => alert('Error: ' + err));
-            });
+            }
         </script>
 
     {% elif request.endpoint == 'edit_product' %}
