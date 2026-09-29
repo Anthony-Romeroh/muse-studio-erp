@@ -1726,7 +1726,7 @@ TEMPLATE = """
                     </td>
                     <td style="padding: 12px; border: 1px solid #e0e0e0; text-align: center;">
                         {% if item.status == 'analisis' %}
-                            <button onclick="openEditModal({{ item.id }}, '{{ item.loss_reason }}', '{{ item.notes }}')" class="btn" style="padding: 5px 10px; font-size: 18px; background: #FF9800; color: white;">✏️ Resolver</button>
+                            <button onclick="openResolveAnalysisModal({{ item.id }}, '{{ item.loss_reason }}', '{{ item.notes }}')" class="btn" style="padding: 5px 10px; font-size: 18px; background: #FF9800; color: white;">✏️ Resolver</button>
                         {% else %}
                             <a href="/admin/inventory/{{ count.id }}/remove/{{ item.id }}" class="btn" style="padding: 5px 10px; font-size: 18px; background: #f44336;">🗑️</a>
                         {% endif %}
@@ -1739,7 +1739,7 @@ TEMPLATE = """
         </div>
 
         <!-- Modal para resolver análisis -->
-        <div id="editModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; justify-content: center; align-items: center;">
+        <div id="resolveAnalysisModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; justify-content: center; align-items: center;">
             <div style="background: white; padding: 40px; border-radius: 10px; max-width: 700px; width: 90%; max-height: 90vh; overflow-y: auto;">
                 <h2 style="font-size: 26px; margin-top: 0;">Resolver Análisis</h2>
                 <form method="POST" style="display: flex; flex-direction: column; gap: 20px;">
@@ -1759,21 +1759,21 @@ TEMPLATE = """
                     <textarea name="notes" id="editNotes" placeholder="Notas..." style="width: 100%; padding: 14px; border: 2px solid #ccc; border-radius: 5px; height: 120px; font-size: 18%;"></textarea>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                         <button type="submit" class="btn btn-pink" style="padding: 16px 20px; font-size: 18px;">✅ Guardar</button>
-                        <button type="button" onclick="closeEditModal()" class="btn btn-dark" style="padding: 16px 20px; font-size: 18px;">Cancelar</button>
+                        <button type="button" onclick="closeResolveAnalysisModal()" class="btn btn-dark" style="padding: 16px 20px; font-size: 18px;">Cancelar</button>
                     </div>
                 </form>
             </div>
         </div>
 
         <script>
-            function openEditModal(itemId, reason, notes) {
+            function openResolveAnalysisModal(itemId, reason, notes) {
                 document.getElementById('editItemId').value = itemId;
                 document.getElementById('editReason').value = reason || '';
                 document.getElementById('editNotes').value = notes || '';
-                document.getElementById('editModal').style.display = 'flex';
+                document.getElementById('resolveAnalysisModal').style.display = 'flex';
             }
-            function closeEditModal() {
-                document.getElementById('editModal').style.display = 'none';
+            function closeResolveAnalysisModal() {
+                document.getElementById('resolveAnalysisModal').style.display = 'none';
             }
         </script>
 
