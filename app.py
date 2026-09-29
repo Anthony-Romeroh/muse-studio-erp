@@ -512,31 +512,28 @@ TEMPLATE = """
             <label style="margin-top: 20px;">{{ theme.INFORMATION.precio }} Categoría:</label>
             <input type="text" name="category" value="{{ edit_product.category }}" required style="padding: 14px; border: 2px solid #ddd; border-radius: 5px; width: 100%; box-sizing: border-box; font-size: 16px;">
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
-                <div>
-                    <label style="margin-top: 0;">💰 Precio de Costo Unitario ($):</label>
-                    <div style="color: #999; font-size: 12px; margin-bottom: 4px;">Para futuros registros de venta</div>
-                    <input type="number" step="0.01" name="cost_price" value="{{ edit_product.cost_price }}" required style="padding: 14px; border: 2px solid #FF6B9D; border-radius: 5px; width: 100%; box-sizing: border-box; font-size: 16px;">
-                </div>
-                <div>
-                    <label style="margin-top: 0;">🛍️ Precio de Venta Unitario ($):</label>
-                    <div style="color: #999; font-size: 12px; margin-bottom: 4px;">Precio por cada unidad</div>
-                    <input type="number" step="0.01" name="sale_price" value="{{ edit_product.sale_price }}" required style="padding: 14px; border: 2px solid #4CAF50; border-radius: 5px; width: 100%; box-sizing: border-box; font-size: 16px;">
-                </div>
+            <div style="background: #f9f9f9; padding: 16px; border-radius: 8px; margin-top: 20px; border-left: 4px solid #2196F3;">
+                <label style="margin-top: 0; font-weight: bold;">🛍️ Precio de Venta Unitario ($):</label>
+                <div style="color: #999; font-size: 12px; margin-bottom: 8px;">Precio que cobras por cada unidad</div>
+                <input type="number" step="0.01" name="sale_price" value="{{ edit_product.sale_price }}" required id="salePriceInput" style="padding: 14px; border: 2px solid #4CAF50; border-radius: 5px; width: 100%; box-sizing: border-box; font-size: 16px;">
             </div>
 
             <div style="background: #fff3e0; padding: 16px; border-radius: 8px; margin-top: 20px; border-left: 4px solid #FF9800;">
-                <h4 style="margin: 0 0 12px 0; color: #FF9800; font-size: 16px;">➕ Agregar más Cantidad al Stock</h4>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <h4 style="margin: 0 0 16px 0; color: #FF9800; font-size: 16px;">➕ Agregar más Cantidad al Stock</h4>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 16px;">
                     <div>
-                        <label style="margin-top: 0;">📦 Cantidad a Agregar:</label>
-                        <input type="number" name="quantity_adjustment" min="0" placeholder="0" style="padding: 14px; border: 2px solid #FF9800; border-radius: 5px; width: 100%; box-sizing: border-box; font-size: 16px;">
+                        <label style="margin-top: 0;">📦 Cantidad:</label>
+                        <input type="number" name="quantity_adjustment" min="0" placeholder="0" id="qtyAdjustInput" style="padding: 14px; border: 2px solid #FF9800; border-radius: 5px; width: 100%; box-sizing: border-box; font-size: 16px;">
                     </div>
                     <div>
-                        <label style="margin-top: 0;">💵 Costo Total de la Cantidad ($):</label>
-                        <div style="color: #999; font-size: 12px; margin-bottom: 4px;">¿Cuánto gastaste en estas unidades?</div>
+                        <label style="margin-top: 0;">💵 Valor da Compra ($):</label>
+                        <div style="color: #999; font-size: 12px; margin-bottom: 4px;">Total que gastaste</div>
                         <input type="number" step="0.01" id="costTotalAdjustment" placeholder="0.00" style="padding: 14px; border: 2px solid #FF9800; border-radius: 5px; width: 100%; box-sizing: border-box; font-size: 16px;">
                     </div>
+                </div>
+                <div style="background: white; padding: 12px; border-radius: 6px; border: 1px solid #FFD699;">
+                    <div style="font-size: 12px; color: #999; margin-bottom: 4px;">💰 Costo Unitário (calculado):</div>
+                    <div style="font-size: 20px; font-weight: bold; color: #FF9800;" id="calcCostUnitario">$ 0.00</div>
                 </div>
             </div>
 
@@ -556,42 +553,55 @@ TEMPLATE = """
         </form>
 
         <script>
-            const costInput = document.querySelector('input[name="cost_price"]');
-            const saleInput = document.querySelector('input[name="sale_price"]');
-            const qtyInput = document.querySelector('input[name="quantity_adjustment"]');
+            const saleInput = document.getElementById('salePriceInput');
+            const qtyInput = document.getElementById('qtyAdjustInput');
+            const costTotalInput = document.getElementById('costTotalAdjustment');
             const marginResult = document.getElementById('marginResult');
             const marginPercent = document.getElementById('marginPercent');
-
-            function updateMargin() {
-                const costTotal = parseFloat(costInput.value) || 0;
-                const saleUnitario = parseFloat(saleInput.value) || 0;
-                const qty = parseInt(qtyInput.value) || 1;
-                const ventaTotal = saleUnitario * qty;
-                const marginTotal = ventaTotal - costTotal;
-                const costUnitario = qty > 0 ? (costTotal / qty).toFixed(2) : 0;
-                const marginUnitario = saleUnitario - costUnitario;
-                const percent = saleUnitario > 0 ? ((marginUnitario / saleUnitario) * 100).toFixed(1) : 0;
-
-                marginResult.textContent = '$ ' + marginTotal.toFixed(2) + ' (' + qty + 'x)';
-                marginPercent.textContent = marginUnitario.toFixed(2) + ' unitario | ' + percent + '% ganancia';
-                marginResult.style.color = marginTotal >= 0 ? '#4CAF50' : '#f44336';
-            }
-
-            costInput.addEventListener('input', updateMargin);
-            saleInput.addEventListener('input', updateMargin);
-            qtyInput.addEventListener('input', updateMargin);
-            updateMargin();
-
-            // Manejar el costo total de la cantidad a agregar
-            const costTotalInput = document.getElementById('costTotalAdjustment');
+            const calcCostUnitarioDiv = document.getElementById('calcCostUnitario');
             const costHiddenInput = document.getElementById('costAdjustmentHidden');
             const form = document.querySelector('form');
 
-            if (costTotalInput && form) {
+            function updateMargin() {
+                const costTotal = parseFloat(costTotalInput.value) || 0;
+                const saleUnitario = parseFloat(saleInput.value) || 0;
+                const qty = parseInt(qtyInput.value) || 0;
+
+                // Calcular costo unitario
+                const costUnitario = qty > 0 ? (costTotal / qty) : 0;
+
+                // Calcular ganancias
+                const ventaTotal = saleUnitario * qty;
+                const marginTotal = ventaTotal - costTotal;
+                const marginUnitario = saleUnitario - costUnitario;
+                const percent = saleUnitario > 0 ? ((marginUnitario / saleUnitario) * 100).toFixed(1) : 0;
+
+                // Mostrar costo unitario calculado
+                calcCostUnitarioDiv.textContent = '$ ' + costUnitario.toFixed(2);
+
+                // Mostrar margen de ganancia
+                if (qty > 0) {
+                    marginResult.textContent = '$ ' + marginTotal.toFixed(2) + ' (' + qty + 'x)';
+                    marginPercent.textContent = marginUnitario.toFixed(2) + ' unitario | ' + percent + '% ganancia';
+                    marginResult.style.color = marginTotal >= 0 ? '#4CAF50' : '#f44336';
+                } else {
+                    marginResult.textContent = '-';
+                    marginPercent.textContent = '-';
+                }
+            }
+
+            saleInput.addEventListener('input', updateMargin);
+            qtyInput.addEventListener('input', updateMargin);
+            costTotalInput.addEventListener('input', updateMargin);
+
+            // Manejar el costo total cuando se envía el formulario
+            if (form) {
                 form.addEventListener('submit', function(e) {
                     costHiddenInput.value = costTotalInput.value || 0;
                 });
             }
+
+            updateMargin();
         </script>
 
     {% elif request.endpoint == 'admin_new_product' %}
