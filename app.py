@@ -497,53 +497,6 @@ TEMPLATE = """
         </div>
 
         <script>
-            const table = document.getElementById('dataTable');
-            const filterInput = document.getElementById('filterInput');
-            const headers = table.querySelectorAll('th:not(:last-child)');
-            let sortOrder = {};
-
-            // Inicializar sort order
-            headers.forEach((h, i) => { sortOrder[i] = 'asc'; });
-
-            // Evento de filtro
-            filterInput.addEventListener('keyup', function() {
-                const filter = this.value.toLowerCase();
-                const rows = table.querySelectorAll('tr:not(:first-child)');
-                rows.forEach(row => {
-                    const text = row.textContent.toLowerCase();
-                    row.style.display = text.includes(filter) ? '' : 'none';
-                });
-            });
-
-            // Evento de ordenação nas colunas
-            headers.forEach((header, index) => {
-                header.addEventListener('click', function() {
-                    const rows = Array.from(table.querySelectorAll('tr:not(:first-child)'));
-                    const isAsc = sortOrder[index] === 'asc';
-
-                    rows.sort((a, b) => {
-                        const aVal = a.children[index].textContent.trim();
-                        const bVal = b.children[index].textContent.trim();
-                        const aNum = parseFloat(aVal.replace(/[^\\d.-]/g, '')) || aVal;
-                        const bNum = parseFloat(bVal.replace(/[^\\d.-]/g, '')) || bVal;
-
-                        if (typeof aNum === 'number' && typeof bNum === 'number') {
-                            return isAsc ? aNum - bNum : bNum - aNum;
-                        }
-                        return isAsc ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
-                    });
-
-                    rows.forEach(row => table.appendChild(row));
-                    sortOrder[index] = isAsc ? 'desc' : 'asc';
-
-                    // Actualizar visual del header
-                    headers.forEach((h, i) => {
-                        h.style.background = i === index ? '#FFB6D9' : '';
-                        h.style.fontWeight = i === index ? 'bold' : '';
-                    });
-                });
-            });
-
             // Funciones para el modal de edición
             function openEditModal(code, name, category, salePrice) {
                 document.getElementById('modalProductCode').value = code;
