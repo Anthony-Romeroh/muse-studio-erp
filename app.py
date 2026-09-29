@@ -435,8 +435,8 @@ TEMPLATE = """
                 </div>
                 {% if session['role'] == 'admin' %}
                 <div style="display: flex; flex-direction: column; gap: 8px;">
-                    <button type="button" onclick="openEditModal('{{ p.code }}', '{{ p.name }}', '{{ p.category }}', {{ p.sale_price }})" class="btn" style="background: #2196F3; color: white; padding: 12px 16px; font-size: 16px; cursor: pointer;">
-                        ✏️ Editar
+                    <button type="button" onclick="openEditModal('{{ p.code }}', {{ p.sale_price }})" class="btn" style="background: #2196F3; color: white; padding: 12px 16px; font-size: 16px; cursor: pointer;">
+                        ✏️ Editar Precio
                     </button>
                     <a href="/admin/product/toggle/{{ p.code }}" class="btn" style="background: #FFC107; color: #000; padding: 12px 16px; font-size: 16px;">
                         {% if p.status == 'ativo' %} 🔒 Desactivar {% else %} ✅ Activar {% endif %}
@@ -459,33 +459,8 @@ TEMPLATE = """
                     <input type="hidden" name="product_code" id="modalProductCode">
 
                     <div>
-                        <label style="font-weight: bold;">Nombre:</label>
-                        <input type="text" id="modalName" name="name" required style="padding: 12px; border: 2px solid #ddd; border-radius: 5px; width: 100%; box-sizing: border-box;">
-                    </div>
-
-                    <div>
-                        <label style="font-weight: bold;">Categoría:</label>
-                        <input type="text" id="modalCategory" name="category" required style="padding: 12px; border: 2px solid #ddd; border-radius: 5px; width: 100%; box-sizing: border-box;">
-                    </div>
-
-                    <div>
                         <label style="font-weight: bold;">🛍️ Valor de Venta Unitário ($):</label>
                         <input type="number" step="0.01" id="modalSalePrice" name="sale_price" required style="padding: 12px; border: 2px solid #4CAF50; border-radius: 5px; width: 100%; box-sizing: border-box;">
-                    </div>
-
-                    <hr style="margin: 10px 0; border: none; border-top: 1px solid #eee;">
-
-                    <h4 style="margin: 10px 0; color: #FF9800;">➕ Agregar Cantidad</h4>
-
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                        <div>
-                            <label style="font-weight: bold;">Cantidad:</label>
-                            <input type="number" id="modalQuantity" name="quantity_adjustment" min="0" placeholder="0" style="padding: 12px; border: 2px solid #FF9800; border-radius: 5px; width: 100%; box-sizing: border-box;">
-                        </div>
-                        <div>
-                            <label style="font-weight: bold;">Valor Compra ($):</label>
-                            <input type="number" step="0.01" id="modalCostTotal" name="cost_adjustment_total" placeholder="0.00" style="padding: 12px; border: 2px solid #FF9800; border-radius: 5px; width: 100%; box-sizing: border-box;">
-                        </div>
                     </div>
 
                     <div style="display: flex; gap: 12px; margin-top: 20px;">
@@ -498,13 +473,9 @@ TEMPLATE = """
 
         <script>
             // Funciones para el modal de edición
-            function openEditModal(code, name, category, salePrice) {
+            function openEditModal(code, salePrice) {
                 document.getElementById('modalProductCode').value = code;
-                document.getElementById('modalName').value = name;
-                document.getElementById('modalCategory').value = category;
                 document.getElementById('modalSalePrice').value = salePrice;
-                document.getElementById('modalQuantity').value = 0;
-                document.getElementById('modalCostTotal').value = 0;
                 document.getElementById('editModal').style.display = 'flex';
                 window.currentProductCode = code;
             }
@@ -2300,21 +2271,9 @@ def edit_product(code):
     if not product: return redirect(url_for('admin_catalog'))
 
     if request.method == 'POST':
-        product.name = request.form['name'].upper()
-        product.category = request.form['category'].upper()
         product.sale_price = float(request.form['sale_price'])
-        quantity_adjustment = int(request.form.get('quantity_adjustment', 0) or 0)
-
-        if quantity_adjustment > 0:
-            cost_adjustment_total = float(request.form.get('cost_adjustment_total', 0) or 0)
-            unit_cost = cost_adjustment_total / quantity_adjustment if quantity_adjustment > 0 else 0
-            db.session.add(Purchase(product_code=code, quantity=quantity_adjustment, unit_cost=unit_cost, date=date.today()))
-
         db.session.commit()
-        msg = f'✅ Producto {code} actualizado correctamente! Costo: ${product.cost_price:.2f} | Venta: ${product.sale_price:.2f}'
-        if quantity_adjustment > 0:
-            msg += f' | +Stock: {quantity_adjustment}'
-        flash(msg)
+        flash(f'✅ Precio actualizado! Venta: ${product.sale_price:.2f}')
         return redirect(url_for('admin_catalog'))
 
     return render_template_string(TEMPLATE, edit_product=product, theme=Theme)
