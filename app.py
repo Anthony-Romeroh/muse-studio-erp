@@ -512,18 +512,31 @@ TEMPLATE = """
             <label style="margin-top: 20px;">{{ theme.INFORMATION.precio }} Categoría:</label>
             <input type="text" name="category" value="{{ edit_product.category }}" required style="padding: 14px; border: 2px solid #ddd; border-radius: 5px; width: 100%; box-sizing: border-box; font-size: 16px;">
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-top: 20px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
                 <div>
-                    <label style="margin-top: 0;">💰 Precio de Costo ($):</label>
+                    <label style="margin-top: 0;">💰 Precio de Costo Unitario ($):</label>
+                    <div style="color: #999; font-size: 12px; margin-bottom: 4px;">Para futuros registros de venta</div>
                     <input type="number" step="0.01" name="cost_price" value="{{ edit_product.cost_price }}" required style="padding: 14px; border: 2px solid #FF6B9D; border-radius: 5px; width: 100%; box-sizing: border-box; font-size: 16px;">
                 </div>
                 <div>
-                    <label style="margin-top: 0;">🛍️ Precio de Venta ($):</label>
+                    <label style="margin-top: 0;">🛍️ Precio de Venta Unitario ($):</label>
+                    <div style="color: #999; font-size: 12px; margin-bottom: 4px;">Precio por cada unidad</div>
                     <input type="number" step="0.01" name="sale_price" value="{{ edit_product.sale_price }}" required style="padding: 14px; border: 2px solid #4CAF50; border-radius: 5px; width: 100%; box-sizing: border-box; font-size: 16px;">
                 </div>
-                <div>
-                    <label style="margin-top: 0;">📦 Cantidad/Stock:</label>
-                    <input type="number" name="quantity_adjustment" min="0" placeholder="0" style="padding: 14px; border: 2px solid #2196F3; border-radius: 5px; width: 100%; box-sizing: border-box; font-size: 16px;">
+            </div>
+
+            <div style="background: #fff3e0; padding: 16px; border-radius: 8px; margin-top: 20px; border-left: 4px solid #FF9800;">
+                <h4 style="margin: 0 0 12px 0; color: #FF9800; font-size: 16px;">➕ Agregar más Cantidad al Stock</h4>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div>
+                        <label style="margin-top: 0;">📦 Cantidad a Agregar:</label>
+                        <input type="number" name="quantity_adjustment" min="0" placeholder="0" style="padding: 14px; border: 2px solid #FF9800; border-radius: 5px; width: 100%; box-sizing: border-box; font-size: 16px;">
+                    </div>
+                    <div>
+                        <label style="margin-top: 0;">💵 Costo Total de la Cantidad ($):</label>
+                        <div style="color: #999; font-size: 12px; margin-bottom: 4px;">¿Cuánto gastaste en estas unidades?</div>
+                        <input type="number" step="0.01" id="costTotalAdjustment" placeholder="0.00" style="padding: 14px; border: 2px solid #FF9800; border-radius: 5px; width: 100%; box-sizing: border-box; font-size: 16px;">
+                    </div>
                 </div>
             </div>
 
@@ -532,6 +545,8 @@ TEMPLATE = """
                 <div id="marginResult" style="font-size: 24px; font-weight: bold; color: #4CAF50;">-</div>
                 <div id="marginPercent" style="font-size: 14px; color: #999; margin-top: 4px;">-</div>
             </div>
+
+            <input type="hidden" name="cost_adjustment_total" id="costAdjustmentHidden" value="0">
 
             <div style="display: flex; gap: 16px; margin-top: 28px;">
                 <button type="submit" class="btn btn-pink" style="flex: 1; padding: 16px; font-size: 18px;">✅ Guardar Cambios</button>
@@ -566,6 +581,17 @@ TEMPLATE = """
             saleInput.addEventListener('input', updateMargin);
             qtyInput.addEventListener('input', updateMargin);
             updateMargin();
+
+            // Manejar el costo total de la cantidad a agregar
+            const costTotalInput = document.getElementById('costTotalAdjustment');
+            const costHiddenInput = document.getElementById('costAdjustmentHidden');
+            const form = document.querySelector('form');
+
+            if (costTotalInput && form) {
+                form.addEventListener('submit', function(e) {
+                    costHiddenInput.value = costTotalInput.value || 0;
+                });
+            }
         </script>
 
     {% elif request.endpoint == 'admin_new_product' %}
@@ -2245,7 +2271,8 @@ def edit_product(code):
         quantity_adjustment = int(request.form.get('quantity_adjustment', 0) or 0)
 
         if quantity_adjustment > 0:
-            unit_cost = product.cost_price / quantity_adjustment
+            cost_adjustment_total = float(request.form.get('cost_adjustment_total', 0) or 0)
+            unit_cost = cost_adjustment_total / quantity_adjustment if quantity_adjustment > 0 else 0
             db.session.add(Purchase(product_code=code, quantity=quantity_adjustment, unit_cost=unit_cost, date=date.today()))
 
         db.session.commit()
