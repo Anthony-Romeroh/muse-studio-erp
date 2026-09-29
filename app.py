@@ -2077,7 +2077,8 @@ def admin_new_product():
         db.session.commit()
 
         if initial_quantity > 0:
-            db.session.add(Purchase(product_code=code, quantity=initial_quantity, unit_cost=cost_price, date=date.today()))
+            unit_cost = cost_price / initial_quantity
+            db.session.add(Purchase(product_code=code, quantity=initial_quantity, unit_cost=unit_cost, date=date.today()))
             db.session.commit()
 
         margin = sale_price - cost_price
@@ -2244,7 +2245,8 @@ def edit_product(code):
         quantity_adjustment = int(request.form.get('quantity_adjustment', 0) or 0)
 
         if quantity_adjustment > 0:
-            db.session.add(Purchase(product_code=code, quantity=quantity_adjustment, unit_cost=product.cost_price, date=date.today()))
+            unit_cost = product.cost_price / quantity_adjustment
+            db.session.add(Purchase(product_code=code, quantity=quantity_adjustment, unit_cost=unit_cost, date=date.today()))
 
         db.session.commit()
         msg = f'✅ Producto {code} actualizado correctamente! Costo: ${product.cost_price:.2f} | Venta: ${product.sale_price:.2f}'
