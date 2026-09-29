@@ -517,9 +517,21 @@ TEMPLATE = """
                 event.preventDefault();
                 const form = document.getElementById('editForm');
                 const code = window.currentProductCode;
-                form.action = '/admin/product/edit/' + code;
-                form.method = 'POST';
-                form.submit();
+                const formData = new FormData(form);
+
+                fetch('/admin/product/edit/' + code, {
+                    method: 'POST',
+                    body: formData
+                }).then(response => {
+                    if (response.ok) {
+                        window.location.href = '/admin/catalog';
+                    } else {
+                        alert('Error al guardar');
+                    }
+                }).catch(error => {
+                    console.error('Error:', error);
+                    alert('Error: ' + error);
+                });
             }
 
             // Cerrar modal al hacer click fuera
