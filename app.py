@@ -543,22 +543,26 @@ TEMPLATE = """
         <script>
             const costInput = document.querySelector('input[name="cost_price"]');
             const saleInput = document.querySelector('input[name="sale_price"]');
+            const qtyInput = document.querySelector('input[name="quantity_adjustment"]');
             const marginResult = document.getElementById('marginResult');
             const marginPercent = document.getElementById('marginPercent');
 
             function updateMargin() {
                 const cost = parseFloat(costInput.value) || 0;
                 const sale = parseFloat(saleInput.value) || 0;
-                const margin = sale - cost;
-                const percent = sale > 0 ? ((margin / sale) * 100).toFixed(1) : 0;
+                const qty = parseInt(qtyInput.value) || 1;
+                const marginUnitario = sale - cost;
+                const marginTotal = marginUnitario * qty;
+                const percent = sale > 0 ? ((marginUnitario / sale) * 100).toFixed(1) : 0;
 
-                marginResult.textContent = '$ ' + margin.toFixed(2);
-                marginPercent.textContent = percent + '% de ganancia';
-                marginResult.style.color = margin >= 0 ? '#4CAF50' : '#f44336';
+                marginResult.textContent = '$ ' + marginTotal.toFixed(2) + ' (' + qty + 'x)';
+                marginPercent.textContent = marginUnitario.toFixed(2) + ' unitario | ' + percent + '% ganancia';
+                marginResult.style.color = marginTotal >= 0 ? '#4CAF50' : '#f44336';
             }
 
             costInput.addEventListener('input', updateMargin);
             saleInput.addEventListener('input', updateMargin);
+            qtyInput.addEventListener('input', updateMargin);
             updateMargin();
         </script>
 
