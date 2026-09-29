@@ -455,7 +455,7 @@ TEMPLATE = """
             <div style="background: white; padding: 30px; border-radius: 12px; max-width: 500px; width: 90%; box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
                 <h2 style="margin: 0 0 20px 0;">✏️ Editar Producto</h2>
 
-                <form id="editForm" onsubmit="return submitEditForm(event)" style="display: flex; flex-direction: column; gap: 16px;">
+                <form id="editForm" style="display: flex; flex-direction: column; gap: 16px;">
                     <input type="hidden" name="product_code" id="modalProductCode">
 
                     <div>
@@ -489,7 +489,7 @@ TEMPLATE = """
                     </div>
 
                     <div style="display: flex; gap: 12px; margin-top: 20px;">
-                        <button type="submit" class="btn btn-pink" style="flex: 1; padding: 12px;">✅ Guardar</button>
+                        <button type="button" onclick="submitEditForm(event)" class="btn btn-pink" style="flex: 1; padding: 12px;">✅ Guardar</button>
                         <button type="button" onclick="closeEditModal()" style="flex: 1; padding: 12px; background: #ccc; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">❌ Cancelar</button>
                     </div>
                 </form>
